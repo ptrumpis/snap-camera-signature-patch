@@ -141,8 +141,6 @@ function _parseROM() {
 
 /* initialize app */
 addEvent(window, 'load', function () {
-	el('row-file-patch').title = _('compatible_formats') + ' IPS, BPS';
-
 	el('input-file-rom').value = '';
 	el('input-file-patch').value = '';
 	setTabApplyEnabled(true);
@@ -374,9 +372,11 @@ function setMessage(tab, key, className) {
 
 function setElementEnabled(element, status) {
 	if (status) {
-		el(element).className = 'enabled';
+		el(element).classList.add('enabled');
+		el(element).classList.remove('disabled');
 	} else {
-		el(element).className = 'disabled';
+		el(element).classList.add('disabled');
+		el(element).classList.remove('enabled');
 	}
 	el(element).disabled = !status;
 }

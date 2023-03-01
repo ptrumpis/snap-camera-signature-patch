@@ -1,238 +1,166 @@
-<!DOCTYPE html>
-<html translate="no">
+<!doctype html>
+<html lang="en">
 <head>
-	<title>Rom Patcher JS</title>
-	<meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
-	<meta name="description" content="An online web-based ROM patcher. Supported formats: IPS, BPS, UPS, APS, RUP, PPF and xdelta."/>
-	<meta name="keywords" content="ips,ups,aps,bps,rup,ninja,ppf,xdelta,patcher,online,html5,web,rom,patch,hack,translation"/>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
-	<link rel="manifest" href="./manifest.json"/>
-	<link rel="shortcut icon" href="./style/app_icon_16.png" type="image/png" sizes="16x16"/>
-	<link rel="shortcut icon" href="./style/app_icon_192.png" type="image/png" sizes="192x192"/>
-	<!-- iOS icons -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Snap Camera Signature Patch to unlock all missing lenses." />
+	<meta name="keywords"
+		content="Snap Camera,Snapcamera,Snapchat,Snap,Snap Lens,Snap Lenses,Lens,Lenses,lens.lns,patcher,online,web,patch,hack,crack">
+	<meta name="author" content="Patrick Trumpis">
+	<meta name="generator" content="Patrick Trumpis">
+
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+	<meta http-equiv="Pragma" content="no-cache" />
+	<meta http-equiv="Expires" content="0" />
+
+	<meta name="twitter:site" content="@TrumpX_TV">
+	<meta name="twitter:creator" content="@TrumpX_TV">
+	<meta property="og:title" content="Snap Camera Signature Patch">
+	<meta name="twitter:title" content="Snap Camera Signature Patch">
+	<meta name="twitter:description" content="Snap Camera Signature Patch to unlock all missing lenses.">
+	<meta property="og:image" content="./style/thumbnail.jpg">
+	<meta name="twitter:image" content="./style/thumbnail.jpg">
+	<meta name="twitter:card" content="photo">
+
+	<title>👻 Snap Camera Signature Patch</title>
+
+	<link rel="canonical" href="https://ptrumpis.github.io/snap-camera-signature-patch/">
+	<link rel="manifest" href="./manifest.json" />
+
+	<link rel="shortcut icon" href="./style/app_icon_16.png" type="image/png" sizes="16x16" />
+	<link rel="shortcut icon" href="./style/app_icon_192.png" type="image/png" sizes="192x192" />
 	<link rel="apple-touch-icon" sizes="57x57" href="./style/app_icon_114.png" />
 	<link rel="apple-touch-icon" sizes="114x114" href="./style/app_icon_114.png" />
 	<link rel="apple-touch-icon" sizes="72x72" href="./style/app_icon_144.png" />
 	<link rel="apple-touch-icon" sizes="144x144" href="./style/app_icon_144.png" />
 	<link rel="apple-touch-icon" href="./style/app_icon_192.png" />
 
-	<!-- cache -->
-	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-	<meta http-equiv="Pragma" content="no-cache" />
-	<meta http-equiv="Expires" content="0" />
-
-	<!-- social network metatags -->	
-	<meta name="twitter:site" content="@marc_robledo">
-	<meta name="twitter:creator" content="@marc_robledo">
-	<meta name="twitter:domain" content="marcrobledo.com">
-	<meta property="og:title" content="Rom Patcher JS">
-	<meta name="twitter:title" content="Rom Patcher JS">
-	<meta name="twitter:description" content="An online web-based ROM patcher. Supported formats: IPS, BPS, UPS, APS, RUP, PPF and xdelta.">
-	<meta property="og:image" content="https://www.marcrobledo.com/RomPatcher.js/style/thumbnail.jpg">
-	<meta name="twitter:image" content="https://www.marcrobledo.com/RomPatcher.js/style/thumbnail.jpg">
-	<meta name="twitter:card" content="photo">
-
-	<link type="text/css" rel="stylesheet" href="./style/RomPatcher.css" media="all"/>
-	<script type="text/javascript" src="./js/locale.js"></script>
-	<script type="text/javascript" src="./js/RomPatcher.js"></script>
-	<script type="text/javascript" src="./js/MarcFile.js"></script>
-	<script type="text/javascript" src="./js/crc.js"></script>
-	<script type="text/javascript" src="./js/formats/zip.js"></script>
-	<script type="text/javascript" src="./js/formats/ips.js"></script>
-	<script type="text/javascript" src="./js/formats/ups.js"></script>
-	<script type="text/javascript" src="./js/formats/aps.js"></script>
-	<script type="text/javascript" src="./js/formats/bps.js"></script>
-	<script type="text/javascript" src="./js/formats/rup.js"></script>
-	<script type="text/javascript" src="./js/formats/ppf.js"></script>
-	<script type="text/javascript" src="./js/formats/pmsr.js"></script>
-	<script type="text/javascript" src="./js/formats/vcdiff.js"></script>
-
-	<script type="text/javascript" src="./js/zip.js/zip.js"></script>
-	<!-- <script type="text/javascript" src="js/libunrar/rpc.js"></script> -->
-
-	<script type="text/javascript"><!--
-		// CUSTOM PATCHER EXAMPLE
-		// uncomment this to build your own custom exclusive patcher for your hacks/translations
-		// user will only need to provide the ROM file, as patches will be fetched from your server!
-		// a crc (or various crcs) can be provided for source files, allowing old formats like IPS to have validation!
-		/*var CUSTOM_PATCHER=[
-			{ //example: uncompressed file
-				file:'./_example/SML2DXv181.ips',
-				name:'Super Mario Land 2 DX v1.8.1 (USA/Europe)',
-				crc:0xd5ec24e4
-			},{ //example: uncompressed file
-				file:'./_example/SML2DXv181_jap.ips',
-				name:'Super Mario Land 2 DX v1.8.1 (Japan)',
-				crc:0xa715daf5
-			},{ //example: compressed file
-				file:'./_example/SML2DXv181.zip',
-				name:'Super Mario Land 2 DX v1.8.1 (World)',
-				crc:[0xd5ec24e4,0xa715daf5]
-			},{ //example: compressed file containing several patches, separate patches provided (recommended)
-				file:'./_example/SML2DXv181.zip',
-				patches:[{
-					file:'SML2DXv181.ips',
-					name:'Super Mario Land 2 DX v1.8.1 (USA/Europe)',
-					crc:0xd5ec24e4
-				},{
-					file:'SML2DXv181_jap.ips',
-					name:'Super Mario Land 2 DX v1.8.1 (Japan)',
-					crc:0xa715daf5
-				}]
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+	<link rel="stylesheet" href="./style/RomPatcher.css" type="text/css" media="all" />
+	<script type="text/javascript">
+		var CUSTOM_PATCHER = [
+			{
+				file: './data/sigcrack.ips',
+				name: 'Snap Camera 1.21 Signature Patch',
+				crc: 0x9d92813b
 			}
-		];*/
-	--></script>
+		];
+	</script>
 </head>
-<body><div id="column">
-
-
-<!-- HEADER -->
-<header><img src="./style/logo.png" /><h1>Rom Patcher JS</h1></header>
-
-<!-- APP -->
-<div id="wrapper">
-	<div id="switch-container"><span id="switch-create-button" class="button-outer"><span data-localize="creator_mode">Creator mode</span> <span id="switch-create" class="switch disabled"></span></span></div>
-
-	<div id="tab0" class="tab">
-		<div class="row m-b">
-			<div class="leftcol text-right"><label for="input-file-rom" data-localize="rom_file">ROM file:</label></div>
-			<div class="rightcol">
-				<input type="file" id="input-file-rom" class="enabled" />
+<body class="text-center text-bg-dark">
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark" aria-label="navbar">
+		<div class="container-fluid">
+			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse justify-content-md-center" id="navbar">
+				<ul class="navbar-nav">
+					<li class="nav-item">
+						<a class="nav-link active" aria-current="page" href="https://ptrumpis.github.io/snap-camera-signature-patch/">👻 Snap Camera Signature Patch</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="https://github.com/ptrumpis/snap-camera-server"><i class="bi bi-github"></i> Download Server v3</a>
+					</li>
+					<li class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-archive-fill"></i> Snap Camera Projects</a>
+						<ul class="dropdown-menu">
+							<li>
+								<a class="dropdown-item" href="https://github.com/ptrumpis/snap-camera-server">
+									<i class="bi bi-github"></i> Snap Camera Server
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item" href="https://github.com/ptrumpis/snap-camera-server-auto-config">
+									<i class="bi bi-github"></i> Snap Camera Server Auto Config
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item" href="https://github.com/ptrumpis/snap-lens-cache-import">
+									<i class="bi bi-github"></i> Snap Lens Cache Import
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item" href="https://github.com/ptrumpis/snap-lens-file-extractor">
+									<i class="bi bi-github"></i> Snap Lens File Extractor
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item" href="https://github.com/ptrumpis/snap-lens-file-format">
+									<i class="bi bi-github"></i> Snap Lens File Format
+								</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
 			</div>
 		</div>
-		<div class="row m-b" id="rom-info">
-			<div class="leftcol text-right">CRC32:</div><div class="rightcol"><span id="crc32"></span></div>
-			<div class="leftcol text-right">MD5:</div><div class="rightcol"><span id="md5"></span></div>
-			<div class="leftcol text-right">SHA-1:</div><div class="rightcol"><span id="sha1"></span></div>
-		</div>
-		<div class="row m-b hide" id="row-removeheader">
-			<div class="leftcol text-right"></div>
-			<div class="rightcol">
-				<input type="checkbox" id="checkbox-removeheader" /> <label for="checkbox-removeheader" data-localize="remove_header">Remove header before patching</label>
+	</nav>
+
+	<div class="cover-container w-100 h-100 p-3 mx-auto mt-3">
+		<main class="px-3">
+			<h4>🔓 Unlock all Snap Lenses with Snap Camera Server v3</h4>
+			<p>This patch will remove all file signature checks of your Snap Camera application to use modified Snap Lenses.</p>
+			<p>Requires <a class="link-success" href="https://github.com/ptrumpis/snap-camera-server">Snap Camera Server v3</a> from <i class="bi bi-github"></i> Github</a></p>
+			<br />
+			<p class="text-warning">Supports Windows version 1.21 only.</p>
+		</main>
+
+		<div id="wrapper" class="container mt-4">
+			<div class="row my-2">
+				<div class="col">
+					<span class="text-primary">Select your original <u>Snap Camera.exe</u><br/>
+						from your application folder and apply the patch.</span>
+				</div>
 			</div>
-		</div>
-		<div class="row m-b hide" id="row-addheader">
-			<div class="leftcol text-right"></div>
-			<div class="rightcol">
-				<input type="checkbox" id="checkbox-addheader" /> <label for="checkbox-addheader" data-localize="add_header">Add temporary header</label> <small>(<label id="headersize" for="checkbox-addheader"></label>)</small>
+			<div class="row my-2">
+				<div class="col">
+					<input type="file" id="input-file-rom" class="enabled" />
+				</div>
+			</div>
+			<div class="row my-2">
+				<div class="col">
+					CRC32 <span id="crc32"></span>
+				</div>
+			</div>
+			<div class="row my-2">
+				<div class="col">
+					<label for="input-file-patch" data-localize="patch_file">Patch:</label>
+					<input type="file" id="input-file-patch" accept=".ips,.bps" />
+				</div>
+			</div>
+			<div class="row my-2">
+				<div class="col">
+					<span id="message-apply" class="message"></span>
+				</div>
+			</div>
+			<div class="row my-2">
+				<div class="col">
+					<button type="button" id="button-apply" data-localize="apply_patch" class="btn btn-secondary disabled" disabled>Apply patch</button>
+				</div>
 			</div>
 		</div>
 
-		<div class="row m-b" id="row-file-patch">
-			<div class="leftcol text-right"><label for="input-file-patch" data-localize="patch_file">Patch file:</label></div>
-			<div class="rightcol">
-				<input type="file" id="input-file-patch" accept=".ips,.ups,.bps,.aps,.rup,.ppf,.mod,.xdelta,.vcdiff,.zip"/>
-			</div>
-		</div>
+		<footer class="mt-auto text-white-50 py-5">
+			<p>
+				This is <a href="https://github.com/ptrumpis/snap-camera-signature-patch" class="link-secondary"><i class="bi bi-github"></i>
+					Snap Camera Signature Patch</a>
+				© 2023 by <a href="https://github.com/ptrumpis" class="link-secondary">Patrick Trumpis</a>.
+				<br />
+				created with <a href="https://github.com/marcrobledo/RomPatcher.js/" class="link-secondary" target="_blank"><i class="bi bi-github"></i> Rom Patcher JS</a>
+				<small>v2.7.1</small> by <a href="https://github.com/marcrobledo" class="link-secondary" target="_blank">Marc Robledo</a>.
+			</p>
+		</footer>
 
-		<div class="buttons">
-			<span id="message-apply" class="message"></span>
-			<button id="button-apply" data-localize="apply_patch" class="disabled" disabled>Apply patch</button>
-		</div>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.js"></script>
+		<script type="text/javascript" src="./js/locale.js"></script>
+		<script type="text/javascript" src="./js/RomPatcher.js"></script>
+		<script type="text/javascript" src="./js/MarcFile.js"></script>
+		<script type="text/javascript" src="./js/crc.js"></script>
+		<script type="text/javascript" src="./js/formats/ips.js"></script>
+		<script type="text/javascript" src="./js/formats/bps.js"></script>
 	</div>
+</body>
 
-
-
-	<div id="tab1" class="tab">
-		<div class="row m-b">
-			<div class="leftcol text-right"><label for="input-file-rom1" data-localize="original_rom" >Original ROM:</label></div>
-			<div class="rightcol">
-				<input type="file" id="input-file-rom1" />
-			</div>
-		</div>
-
-		<div class="row m-b">
-			<div class="leftcol text-right"><label for="input-file-rom2" data-localize="modified_rom">Modified ROM:</label></div>
-			<div class="rightcol">
-				<input type="file" id="input-file-rom2" />
-			</div>
-		</div>
-
-		<div class="row m-b">
-			<div class="leftcol text-right" data-localize="patch_type">Patch type:</div>
-			<div class="rightcol">
-				<select id="select-patch-type">
-					<option value="ips">IPS</option>
-					<option value="bps">BPS</option>
-					<option value="ppf">PPF</option>
-					<option value="ups">UPS</option>
-					<option value="aps">APS</option>
-					<option value="rup">RUP</option>
-				</select>
-			</div>
-		</div>
-
-		<div class="buttons">
-			<span id="message-create" class="message"></span>
-			<button id="button-create" class="disabled" disabled data-localize="create_patch">Create patch</button>
-		</div>
-	</div>
-</div>
-
-
-
-
-
-<!-- FOOTER -->
-<footer>
-	<div>
-		<button id="button-settings" class="button-outer"><img src="style/icon_settings.svg" class="icon settings" /> <span data-localize="settings">Settings</span></button>
-	</div>
-
-	Rom Patcher JS <small>v2.7.1</small> by <a href="/">Marc Robledo</a>
-	<br />
-	<img src="style/icon_github.svg" class="icon github" /> <a href="https://github.com/marcrobledo/RomPatcher.js/" target="_blank">See on GitHub</a>
-	<img src="style/icon_heart.svg" class="icon heart" /> <a href="https://www.paypal.me/marcrobledo/5" target="_blank" rel="nofollow">Donate</a>
-</footer>
-
-</div>
-
-
-<!-- SETTINGS DIALOG -->
-<div id="dialog-backdrop">
-	<div id="zip-dialog" class="dialog">
-		<div id="zip-dialog-message" class="text-center"></div>
-		<ul id="zip-dialog-file-list"></ul>
-	</div>
-
-	<div id="settings-dialog" class="dialog">
-		<div class="text-right m-b"><img id="settings-close-dialog" src="style/icon_close.svg" /></div>
-
-		<div class="row m-b">
-			<div class="leftcol"><label for="select-language">Language</label></div>
-			<div class="rightcol text-right">
-				<select id="select-language" class="enabled w100">
-					<option value="en">English</option>
-					<option value="fr">Français</option>
-					<option value="de">Deutsch</option>
-					<option value="it">Italiano</option>
-					<option value="es">Español</option>
-					<option value="nl">Nederlands</option>
-					<option value="sv">Svenska</option>
-					<option value="ca">Català</option>
-					<option value="ca-va">Valencià</option>
-					<option value="pt-br">Português Brasileiro</option>
-					<option value="ru">Russian</option>
-					<option value="ja">日本語</option>
-					<option value="zh-cn">中文（简体）</option>
-				</select>
-			</div>
-		</div>
-
-		<div class="row m-b">
-			<div class="leftcol-lg"><label data-localize="alternate_output_name">Use patch name for output</label></div>
-			<div class="rightcol-lg text-right"><span id="switch-output-name" class="switch disabled"></span></div>
-		</div>
-
-		<div class="row m-b">
-			<div class="leftcol-lg"><label data-localize="fix_checksum">Fix ROM checksum</label></div>
-			<div class="rightcol-lg text-right"><span id="switch-fix-checksum" class="switch disabled"></span></div>
-		</div>
-
-		<div class="row">
-			<div class="leftcol-lg"><label data-localize="light_theme">Light theme</label></div>
-			<div class="rightcol-lg text-right"><span id="switch-theme" class="switch disabled"></span></div>
-		</div>
-	</div>
-</div>
-</body></html>
+</html>

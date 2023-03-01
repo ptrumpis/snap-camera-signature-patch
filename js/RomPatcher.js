@@ -1,4 +1,7 @@
-/* Rom Patcher JS v20230202 - Marc Robledo 2016-2023 - http://www.marcrobledo.com/license */
+/* 
+Rom Patcher JS v20230202 - Marc Robledo 2016-2020 - http://www.marcrobledo.com/license 
+Modded by (c) 2023 Patrick Trumpis - https://github.com/ptrumpis
+*/
 
 var romFile, patchFile, patch, tempFile, headerSize, oldHeader;
 

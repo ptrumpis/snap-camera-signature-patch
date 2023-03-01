@@ -1,5 +1,7 @@
-/* Rom Patcher JS - CRC32 calculator v20210815 - Marc Robledo 2016-2021 - http://www.marcrobledo.com/license */
-
+/* 
+Rom Patcher JS - CRC32 calculator v20210815 - Marc Robledo 2016-2021 - http://www.marcrobledo.com/license
+Modded by (c) 2023 Patrick Trumpis - https://github.com/ptrumpis
+*/
 function padZeroes(intVal, nBytes) {
 	var hexString = intVal.toString(16);
 	while (hexString.length < nBytes * 2)

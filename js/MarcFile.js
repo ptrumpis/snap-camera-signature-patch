@@ -1,4 +1,7 @@
-/* MODDED VERSION OF MarcFile.js v20230202 - Marc Robledo 2014-2023 - http://www.marcrobledo.com/license */
+/* 
+MODDED VERSION OF MarcFile.js v20230202 - Marc Robledo 2014-2023 - http://www.marcrobledo.com/license
+Modded by (c) 2023 Patrick Trumpis - https://github.com/ptrumpis
+*/
 
 function MarcFile(source, onLoad) {
 	if (typeof source === 'object' && source.files) /* get first file only if source is input with multiple files */

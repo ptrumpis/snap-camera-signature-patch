@@ -5,16 +5,12 @@ self.importScripts(
 	'./crc.js'
 );
 
-
-
 self.onmessage = event => { // listen for messages from the main thread
-	var sourceFile=new MarcFile(event.data.u8array);
-
+	var sourceFile = new MarcFile(event.data.u8array);
 	self.postMessage(
 		{
-			crc32:crc32(sourceFile, event.data.startOffset),
-			md5:md5(sourceFile, event.data.startOffset),
-			u8array:event.data.u8array
+			crc32: crc32(sourceFile, event.data.startOffset),
+			u8array: event.data.u8array
 		},
 		[
 			event.data.u8array.buffer

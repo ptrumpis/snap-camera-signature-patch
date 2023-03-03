@@ -1,5 +1,5 @@
 # 🔓 Snap Camera Signature Patch
-Unlocks all Snap Lenses with Snap Camera Server v3
+Unlocks all Snap Lenses with [Snap Camera Server v3](https://github.com/ptrumpis/snap-camera-server)
 
 TL;DR
 - [Web based online Patch Tool](https://ptrumpis.github.io/snap-camera-signature-patch/)
@@ -25,8 +25,10 @@ Use the web based online patch tool
 - [Web based online Patch Tool](https://ptrumpis.github.io/snap-camera-signature-patch/)
 
 ## ❤️ Support
-If you like my work and would like to support me, you are welcome to invite me for a virtual coffee ☕
+If you like my work and want to support me, feel free to invite me for a virtual coffee ☕
 
 - [☕ Ko-fi](https://ko-fi.com/ptrumpis)
 - [☕ Buy me a Coffee](https://www.buymeacoffee.com/ptrumpis)
 - [☕ Liberapay](https://liberapay.com/ptrumpis/)
+
+You can also become my GitHub Sponsor

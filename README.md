@@ -14,11 +14,10 @@ Enabling you to
 - Use modified Lenses (Remove Watermarks / Change Backgrounds...)
 
 ## ⚠ Requirements
-- Snap Camera 1.21.0 (Windows)
+- Snap Camera 1.19 - 1.21 (Windows)
+- Snap Camera 1.21 (Mac OS)
 
-This works on Windows only (because I can't afford a Mac lol).
-
-The next **Snap Camera Server v4** release will probably offer a Mac solution though.
+Now with Windows and Mac OS support 👍
 
 ## 🚀 Usage
 Use the web based online patch tool

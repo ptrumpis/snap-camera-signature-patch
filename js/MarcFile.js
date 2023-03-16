@@ -16,7 +16,7 @@ function MarcFile(source, onLoad) {
             throw new Error('Incompatible Browser');
 
         this.fileName = source.name;
-        this.fileType = source.type;
+        this.fileType = source.type || 'application/octet-stream';
         this.fileSize = source.size;
 
         this._fileReader = new FileReader();
@@ -33,7 +33,7 @@ function MarcFile(source, onLoad) {
 
     } else if (typeof source === 'object' && typeof source.fileName === 'string' && typeof source.littleEndian === 'boolean') { /* source is MarcFile */
         this.fileName = source.fileName;
-        this.fileType = source.fileType;
+        this.fileType = source.fileType || 'application/octet-stream';
         this.fileSize = source.fileSize;
 
         var ab = new ArrayBuffer(source);

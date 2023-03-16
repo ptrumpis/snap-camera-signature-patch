@@ -4,19 +4,19 @@ Modded by (c) 2023 Patrick Trumpis - https://github.com/ptrumpis
 */
 
 self.importScripts(
-	'./MarcFile.js',
-	'./crc.js'
+    './MarcFile.js',
+    './crc.js'
 );
 
 self.onmessage = event => { // listen for messages from the main thread
-	var sourceFile = new MarcFile(event.data.u8array);
-	self.postMessage(
-		{
-			crc32: crc32(sourceFile, event.data.startOffset),
-			u8array: event.data.u8array
-		},
-		[
-			event.data.u8array.buffer
-		]
-	);
+    var sourceFile = new MarcFile(event.data.u8array);
+    self.postMessage(
+        {
+            crc32: crc32(sourceFile, event.data.startOffset),
+            u8array: event.data.u8array
+        },
+        [
+            event.data.u8array.buffer
+        ]
+    );
 };

@@ -124,16 +124,8 @@ MarcFile.prototype.save = function () {
     try {
         blob = new Blob([this._u8array], { type: this.fileType });
     } catch (e) {
-        //old browser, use BlobBuilder
-        window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder || window.MSBlobBuilder;
-        if (e.name === 'InvalidStateError' && window.BlobBuilder) {
-            var bb = new BlobBuilder();
-            bb.append(this._u8array.buffer);
-            blob = bb.getBlob(this.fileType);
-        } else {
-            throw new Error('Incompatible Browser');
-            return false;
-        }
+        throw new Error('Incompatible Browser');
+        return false;
     }
     saveAs(blob, this.fileName);
 }

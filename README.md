@@ -23,6 +23,19 @@ Now with Windows and Mac OS support 👍
 Use the web based online patch tool
 - [Web based online Patch Tool](https://ptrumpis.github.io/snap-camera-signature-patch/)
 
+### 🍏 Additional steps on Mac OS
+Mac OS users will also have to run these commands inside the Terminal application after applying the patch.
+
+1. Make the binary executable:
+```sh
+chmod +x "/Applications/Snap Camera.app/Contents/Mac OS/Snap Camera"
+```
+
+2. Remove the Mac OS code signing:
+```sh
+sudo codesign --remove-signature "/Applications/Snap Camera.app/"
+```
+
 ## ❤️ Support
 If you like my work and want to support me, feel free to invite me for a virtual coffee ☕
 

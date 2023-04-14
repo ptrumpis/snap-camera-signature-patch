@@ -46,6 +46,11 @@ You can also try to fix the error by running the command:
 spctl --add "/Applications/Snap Camera.app"
 ```
 
+And/Or the command:
+```sh
+xattr -cr "/Applications/Snap Camera.app"
+```
+
 ### [📺 Mac OS Video Guide](https://www.youtube.com/watch?v=lJhL7bA7GGA)
 
 [![Patching Snap Camera on Mac OS](https://img.youtube.com/vi/lJhL7bA7GGA/0.jpg)](https://www.youtube.com/watch?v=lJhL7bA7GGA)

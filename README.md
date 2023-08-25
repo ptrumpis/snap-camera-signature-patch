@@ -33,23 +33,32 @@ chmod +x "/Applications/Snap Camera.app/Contents/Mac OS/Snap Camera"
 
 2. Remove the Mac OS code signing:
 ```sh
-sudo codesign --remove-signature "/Applications/Snap Camera.app/"
+sudo codesign --remove-signature "/Applications/Snap Camera.app"
+```
+
+3. Remove extended file attributes:
+```sh
+sudo xattr -cr "/Applications/Snap Camera.app"
 ```
 
 #### Error: application can't be opened
-Check your Mac OS security settings if the application can't be opened.
+Make sure to check your Mac OS security settings if the application can't be opened.
 
 ![gatekeeper2](https://user-images.githubusercontent.com/116500225/231490273-2c621023-3282-468c-b1b8-411e5df35f81.jpg)
 
-You can also try to fix the error by running the command:
+You can try to fix the error by running the command:
 ```sh
 spctl --add "/Applications/Snap Camera.app"
 ```
 
-And/Or the command:
-```sh
-xattr -cr "/Applications/Snap Camera.app"
-```
+#### Still having problems?
+Read this if you still have problems opening the application.
+
+[📖 Troubleshooting Mac OS - Snap Camera can't be opened](https://github.com/ptrumpis/snap-camera-server/wiki/Troubleshooting-Mac-OS)
+
+And also watch the Mac OS video guide below.
+
+--- 
 
 ### [📺 Mac OS Video Guide](https://www.youtube.com/watch?v=lJhL7bA7GGA)
 

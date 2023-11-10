@@ -48,7 +48,12 @@ Make sure to check your Mac OS security settings if the application can't be ope
 
 You can try to fix the error by running the command:
 ```sh
-spctl --add "/Applications/Snap Camera.app"
+sudo spctl --add "/Applications/Snap Camera.app"
+```
+
+Or by running the command:
+```sh
+sudo codesign --force --deep --sign - "/Applications/Snap Camera.app"
 ```
 
 #### Still having problems?

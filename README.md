@@ -28,7 +28,7 @@ Mac OS users will also have to run these commands inside the Terminal applicatio
 
 1. Make the binary executable:
 ```sh
-chmod +x "/Applications/Snap Camera.app/Contents/Mac OS/Snap Camera"
+chmod +x "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera"
 ```
 
 2. Remove the Mac OS code signing:

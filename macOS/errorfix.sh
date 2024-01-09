@@ -15,6 +15,24 @@ if [ ! -f "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera" ]; then
     exit 1
 fi
 
+echo "Generating MD5 checksum of the Snap Camera binary file"
+
+md5_result=$(md5sum "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera" | awk '{print $1}')
+
+declare -A md5_messages=(
+    ["8dc456e29478a0cdfaedefac282958e7"]="Original binary with original code signing."
+    ["15ad19c477d5d246358d68a711e29a6e"]="Original binary no code signing."
+    ["1ac420d1828a3d754e99793af098f830"]="Patched binary with original code signing."
+    ["e2ed1f2e502617392060270fa6e5e979"]="Patched binary no code signing."
+)
+
+if [[ -n ${md5_messages[$md5_result]} ]]; then
+    echo "MD5 checksum result: ${md5_messages[$md5_result]}"
+else
+    echo "Error: unknown MD5 checksum, please reinstall Snap Camera application and try again."
+    exit 1
+fi
+
 echo "Making the binary executable."
 chmod +x "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera"
 

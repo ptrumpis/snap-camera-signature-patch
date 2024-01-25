@@ -57,11 +57,11 @@ sudo codesign --force --deep --sign - "/Applications/Snap Camera.app"
 ```
 
 #### Still having problems?
-Read this if you still have problems opening the application.
+If you still have problems opening the application, you can try a few more things...
 
-[📖 Troubleshooting Mac OS - Snap Camera can't be opened](https://github.com/ptrumpis/snap-camera-server/wiki/Troubleshooting-Mac-OS)
-
-And also watch the Mac OS video guide below.
+1. Read this [📖 Troubleshooting Mac OS - Snap Camera can't be opened](https://github.com/ptrumpis/snap-camera-server/wiki/Troubleshooting-Mac-OS)
+2. Run the macOS [errorfix.sh](https://github.com/ptrumpis/snap-camera-signature-patch/blob/master/macOS/errorfix.sh) script inside your Terminal application
+3. Watch the macOS video guide below.
 
 --- 
 

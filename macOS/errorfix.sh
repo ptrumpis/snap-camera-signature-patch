@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "macOS errorfix v1.2 with ($SHELL | v$BASH_VERSION)"
+echo "macOS errorfix v1.3 with ($SHELL | v$BASH_VERSION)"
 
 if pgrep -x "Snap Camera" > /dev/null; then
     echo "Snap Camera is running. Terminating application."
@@ -28,7 +28,7 @@ else
     echo "Error: The 'curl' command is not available. Please check in your browser that the URL $server_url is accessible."
 fi
 
-echo "Generating MD5 checksum of the Snap Camera binary file"
+echo "Generating MD5 checksum of the Snap Camera binary file."
 
 if command -v md5sum > /dev/null; then
     md5_result=$(md5sum "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera" | awk '{print $1}')
@@ -45,8 +45,7 @@ elif [ "$md5_result" = "1ac420d1828a3d754e99793af098f830" ]; then
 elif [ "$md5_result" = "e2ed1f2e502617392060270fa6e5e979" ]; then
     echo "MD5 checksum result: Patched binary no code signing."
 else
-    echo "Error: unknown MD5 checksum '$md5_result', please reinstall Snap Camera application and try again."
-    exit 1
+    echo "Unknown MD5 checksum '$md5_result'."
 fi
 
 echo "Making the binary executable."
@@ -59,7 +58,17 @@ sudo codesign --remove-signature "/Applications/Snap Camera.app/Contents/MacOS/S
 echo "Removing extended file attributes."
 sudo xattr -cr "/Applications/Snap Camera.app"
 
-echo "Re-Signing the application."
+echo "Re-signing the application."
 sudo codesign --force --deep --sign - "/Applications/Snap Camera.app"
 
+echo "Generating new MD5 checksum."
+if command -v md5sum > /dev/null; then
+    md5_new=$(md5sum "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera" | awk '{print $1}')
+else
+    md5_new=$(md5 -q "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera")
+fi
+echo "New MD5 checksum: '$md5_new'."
+
 echo "You should be able to open Snap Camera now."
+echo "If you continue to have problems, please re-download and re-install snapcamera from:"
+echo "https://bit.ly/snpcm"

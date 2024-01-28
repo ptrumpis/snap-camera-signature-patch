@@ -1,5 +1,13 @@
 #!/bin/bash
-echo "macOS errorfix v1.3 with ($SHELL | v$BASH_VERSION)"
+echo "---------------------------------------"
+echo "macOS errorfix v1.4 with ($SHELL)"
+[ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
+[ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
+OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
+architecture=$(uname -m)
+echo "OS Version: $OS_version"
+echo "Architecture: $architecture"
+echo "---------------------------------------"
 
 if pgrep -x "Snap Camera" > /dev/null; then
     echo "Snap Camera is running. Terminating application."
@@ -53,7 +61,6 @@ chmod +x "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera"
 
 echo "Removing the macOS code signing."
 sudo codesign --remove-signature "/Applications/Snap Camera.app"
-sudo codesign --remove-signature "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera"
 
 echo "Removing extended file attributes."
 sudo xattr -cr "/Applications/Snap Camera.app"
@@ -69,6 +76,12 @@ else
 fi
 echo "New MD5 checksum: '$md5_new'."
 
-echo "You should be able to open Snap Camera now."
-echo "If you continue to have problems, please re-download and re-install snapcamera from:"
+if [ "$architecture" == "arm64" ]; then
+    echo "Running on ARM architecture. Starting Snap Camera application with Rosetta..."
+    arch -x86_64 "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera"
+else
+    echo "You should be able to open Snap Camera now."
+fi
+
+echo "If you continue to have problems, please re-download and re-install Snap Camera from:"
 echo "https://bit.ly/snpcm"

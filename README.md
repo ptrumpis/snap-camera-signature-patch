@@ -5,7 +5,7 @@
 [![GitHub forks](https://img.shields.io/github/forks/ptrumpis/snap-camera-signature-patch?style=flat)](https://github.com/ptrumpis/snap-camera-signature-patch/forks)
 
 # 🔓 Snap Camera Signature Patch
-Unlocks all Snap Lenses with [Snap Camera Server v3](https://github.com/ptrumpis/snap-camera-server)
+Unlocks all Snap Lenses with [Snap Camera Server](https://github.com/ptrumpis/snap-camera-server)
 
 TL;DR  
 [Web based online Patch Tool](https://ptrumpis.github.io/snap-camera-signature-patch/)
@@ -89,4 +89,4 @@ You can also become my GitHub Sponsor
 
 ---
 
-© 2023-2024 [Patrick Trumpis](https://github.com/ptrumpis)
+© 2023-2025 [Patrick Trumpis](https://github.com/ptrumpis)

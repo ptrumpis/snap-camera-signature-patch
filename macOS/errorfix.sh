@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "---------------------------------------"
-echo "macOS errorfix v1.4 with ($SHELL)"
+echo "macOS errorfix v1.5 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -24,13 +24,37 @@ if [ ! -f "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera" ]; then
     exit 1
 fi
 
-server_url="https://studio-app.snapchat.com"
+ip_to_check="127.0.0.1"
+hostname_to_check="studio-app.snapchat.com"
+
+if grep -q "^$ip_to_check\s\+$hostname_to_check" /etc/hosts; then
+    echo "/etc/hosts entrry $ip_to_check $hostname_to_check exists."
+else
+    echo "Error: /etc/hosts entrry $ip_to_check $hostname_to_check does not exist."
+    exit 1
+fi
+
+if ping -c 1 -W 2 "$hostname_to_check" > /dev/null 2>&1; then
+    echo "Ping to host $hostname_to_check succesful."
+else
+    echo "Ping to host $hostname_to_check failed."
+fi
 
 if command -v curl > /dev/null; then
-    if curl --output /dev/null --silent --head --fail "$server_url"; then
-        echo "The server $server_url is reachable."
+    server_url="https://studio-app.snapchat.com"
+
+    server_response=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "$server_url" 2>&1)
+    if [[ "$server_response" =~ ^[0-9]{3}$ ]]; then
+        if [[ "$server_response" != "200" ]]; then
+            echo "Error: The server $server_url responded with status: $server_response"
+            exit 1
+        else
+            echo "The server $server_url is reachable."
+        fi
     else
-        echo "Error: The server $server_url cannot be reached."
+        echo "Error: The server $server_url cannot be reached:"
+        echo "$server_response"
+        exit 1
     fi
 else
     echo "Error: The 'curl' command is not available. Please check in your browser that the URL $server_url is accessible."
@@ -75,6 +99,9 @@ else
     md5_new=$(md5 -q "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera")
 fi
 echo "New MD5 checksum: '$md5_new'."
+
+echo "Checking I/O registry for DAL entries."
+ioreg -l | grep -i "DAL"
 
 if [ "$architecture" == "arm64" ]; then
     echo "Running on ARM architecture. Starting Snap Camera application with Rosetta..."

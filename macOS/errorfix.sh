@@ -30,8 +30,8 @@ server_url="https://studio-app.snapchat.com"
 app_path="/Applications/Snap Camera.app"
 
 echo "🔍 Checking /etc/hosts entries."
-if grep -q "^$ip_to_check\s\+$hostname" /etc/hosts; then
-    echo "✅ /etc/hosts entrry $ip_to_check $hostname exists."
+if grep -q "^$ip_to_check[[:space:]]\+$hostname" /etc/hosts; then
+    echo "✅ /etc/hosts entry $ip_to_check $hostname exists."
 else
     echo "❌ Error: /etc/hosts entrry $ip_to_check $hostname does not exist."
     exit 1
@@ -44,6 +44,7 @@ if grep -q "$hostname" "$tmp_rules"; then
     echo "❌ Host $hostname is blocked by pf. Unblocking..."
     grep -v "$hostname" "$tmp_rules" | sudo tee "$tmp_rules.filtered" > /dev/null
     sudo pfctl -f "$tmp_rules.filtered"
+    sudo pfctl -e
     echo "✅ Host $hostname was unblocked."
 else
     echo "✅ Host $hostname is not blocked by paket filter."
@@ -60,7 +61,7 @@ else
 fi
 
 echo "🔍 Sending ping to host $hostname."
-if ping -c 1 -W 2 "$hostname" > /dev/null 2>&1; then
+if ping -c 1 -W 2000 "$hostname" > /dev/null 2>&1; then
     echo "✅ Ping to host $hostname succesful."
 else
     echo "❌ Ping to host $hostname failed."

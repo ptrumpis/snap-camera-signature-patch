@@ -112,13 +112,20 @@ chmod +x "$binary_path"
 echo "⚪ Removing the macOS code signing."
 if ! sudo codesign --remove-signature "$app_path"; then
     echo "⚠️ Directly removing signature from app bundle failed. Try recursively."
+
+    if find "$app_path" -type f -perm +111 &>/dev/null; then
+        perm_flag="+111"
+    else
+        perm_flag="/111"
+    fi
+
     success=true
     while IFS= read -r file; do
         if ! sudo codesign --remove-signature "$file"; then
             echo "❌ Error: removing signature for file: $file"
             success=false
         fi
-    done < <(find "$app_path" -type f -perm +111)
+    done < <(find "$app_path" -type f -perm $perm_flag)
 
     if $success; then
         echo "✅ All signatures were successfully removed."
@@ -126,13 +133,20 @@ if ! sudo codesign --remove-signature "$app_path"; then
         echo "❌ Error: At least one file could not be freed from the signature."
         exit 1
     fi
+else
+    echo "✅ Signature removal was successful."
 fi
 
 echo "⚪ Removing extended file attributes."
 sudo xattr -cr "$app_path"
 
 echo "⚪ Re-signing the application."
-sudo codesign --force --deep --sign - "$app_path"
+if sudo codesign --force --deep --sign - "$app_path"; then
+    echo "✅ Re-signing was successful."
+else
+    echo "❌ Error: Re-signing failed."
+    exit 1
+fi
 
 echo "🔍 Re-Generating MD5 checksum of the Snap Camera binary file."
 if command -v md5sum > /dev/null; then

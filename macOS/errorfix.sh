@@ -26,8 +26,9 @@ fi
 
 ip_to_check="127.0.0.1"
 hostname="studio-app.snapchat.com"
-server_url="https://studio-app.snapchat.com"
+server_url="https://$hostname"
 app_path="/Applications/Snap Camera.app"
+binary_path="$app_path/Contents/MacOS/Snap Camera"
 
 echo "🔍 Checking /etc/hosts entries."
 if grep -q "^$ip_to_check[[:space:]]\+$hostname" /etc/hosts; then
@@ -41,7 +42,7 @@ echo "🔍 Checking pf-rules."
 tmp_rules="/tmp/pf_rules.conf"
 sudo pfctl -sr > "$tmp_rules"
 if grep -q "$hostname" "$tmp_rules"; then
-    echo "❌ Host $hostname is blocked by pf. Unblocking..."
+    echo "⚠️ Host $hostname is blocked by pf. Unblocking..."
     grep -v "$hostname" "$tmp_rules" | sudo tee "$tmp_rules.filtered" > /dev/null
     sudo pfctl -f "$tmp_rules.filtered"
     sudo pfctl -e
@@ -53,7 +54,7 @@ fi
 echo "🔍 Checking firewall rules."
 blocked_apps=$(sudo defaults read /Library/Preferences/com.apple.alf.plist | grep -A2 "$app_path" | grep -i "block")
 if [[ -n "$blocked_apps" ]]; then
-    echo "❌ Snap Camera is blocked by firewall. Unblocking..."
+    echo "⚠️ Snap Camera is blocked by firewall. Unblocking..."
     sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$app_path"
     echo "✅ Snap Camera was unblocked."
 else
@@ -88,9 +89,9 @@ fi
 
 echo "🔍 Generating MD5 checksum of the Snap Camera binary file."
 if command -v md5sum > /dev/null; then
-    md5_result=$(md5sum "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera" | awk '{print $1}')
+    md5_result=$(md5sum "$binary_path" | awk '{print $1}')
 else
-    md5_result=$(md5 -q "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera")
+    md5_result=$(md5 -q "$binary_path")
 fi
 
 if [ "$md5_result" = "8dc456e29478a0cdfaedefac282958e7" ]; then
@@ -102,26 +103,42 @@ elif [ "$md5_result" = "1ac420d1828a3d754e99793af098f830" ]; then
 elif [ "$md5_result" = "e2ed1f2e502617392060270fa6e5e979" ]; then
     echo "✅ MD5 checksum result: Patched binary no code signing."
 else
-    echo "❌ Unknown MD5 checksum '$md5_result'."
+    echo "⚠️ Unknown MD5 checksum '$md5_result'."
 fi
 
 echo "⚪ Making the binary executable."
-chmod +x "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera"
+chmod +x "$binary_path"
 
 echo "⚪ Removing the macOS code signing."
-sudo codesign --remove-signature "/Applications/Snap Camera.app"
+if ! sudo codesign --remove-signature "$app_path"; then
+    echo "⚠️ Directly removing signature from app bundle failed. Try recursively."
+    success=true
+    while IFS= read -r file; do
+        if ! sudo codesign --remove-signature "$file"; then
+            echo "❌ Error: removing signature for file: $file"
+            success=false
+        fi
+    done < <(find "$app_path" -type f -perm +111)
+
+    if $success; then
+        echo "✅ All signatures were successfully removed."
+    else
+        echo "❌ Error: At least one file could not be freed from the signature."
+        exit 1
+    fi
+fi
 
 echo "⚪ Removing extended file attributes."
-sudo xattr -cr "/Applications/Snap Camera.app"
+sudo xattr -cr "$app_path"
 
 echo "⚪ Re-signing the application."
-sudo codesign --force --deep --sign - "/Applications/Snap Camera.app"
+sudo codesign --force --deep --sign - "$app_path"
 
 echo "🔍 Re-Generating MD5 checksum of the Snap Camera binary file."
 if command -v md5sum > /dev/null; then
-    md5_new=$(md5sum "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera" | awk '{print $1}')
+    md5_new=$(md5sum "$binary_path" | awk '{print $1}')
 else
-    md5_new=$(md5 -q "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera")
+    md5_new=$(md5 -q "$binary_path")
 fi
 echo "✅ New MD5 checksum: '$md5_new'."
 
@@ -130,7 +147,7 @@ ioreg -l | grep -i "DAL"
 
 if [ "$architecture" == "arm64" ]; then
     echo "✅ Running on ARM architecture. Starting Snap Camera application with Rosetta..."
-    arch -x86_64 "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera"
+    arch -x86_64 "$binary_path"
 else
     echo "✅ You should be able to open Snap Camera now."
 fi

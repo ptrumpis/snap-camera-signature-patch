@@ -55,14 +55,38 @@ else
     fi
 fi
 
-echo "🔍 Checking firewall rules."
-blocked_apps=$(sudo defaults read /Library/Preferences/com.apple.alf.plist | grep -A2 "$app_path" | grep -i "block")
-if [[ -n "$blocked_apps" ]]; then
-    echo "⚠️ Snap Camera is blocked by firewall. Unblocking..."
-    sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$app_path"
-    echo "✅ Snap Camera was unblocked."
+echo "🔍 Checking firewall status."
+if [ -f "/Library/Preferences/com.apple.alf.plist" ]; then
+    firewall_state=$(sudo defaults read /Library/Preferences/com.apple.alf globalstate 2>/dev/null)
+    case "$firewall_state" in
+        0)
+            echo "✅ Firewall is disabled. Skipping firewall checks."
+            ;;
+       1|2)
+            echo "✅ Firewall is enabled. Checking if Snap Camera is blocked..."
+
+            blocked_apps=$(sudo defaults read /Library/Preferences/com.apple.alf.plist | grep -A2 "$app_path" | grep -i "block")
+            if [[ -n "$blocked_apps" ]]; then
+                echo "⚠️ Snap Camera is blocked by firewall. Unblocking..."
+                sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$app_path"
+                echo "✅ Snap Camera was unblocked."
+            else
+                echo "✅ Snap Camera is not blocked by firewall."
+            fi
+
+            if [[ "$firewall_state" -eq 2 ]]; then
+                echo "⚠️ Firewall is in strict mode. Ensuring that Snap Camera is allowed..."
+                sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add "$app_path"
+                sudo /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$app_path"
+                echo "✅ Snap Camera was explicitly allowed in the firewall."
+            fi
+            ;;
+        *)
+            echo "⚠️ Unknown firewall state: $firewall_state. Skipping firewall checks."
+            ;;
+    esac
 else
-    echo "✅ Snap Camera is not blocked by firewall."
+    echo "⚠️ Firewall configuration file not found. Skipping firewall checks."
 fi
 
 echo "🔍 Sending ping to host $hostname."

@@ -41,14 +41,18 @@ fi
 echo "🔍 Checking pf-rules."
 tmp_rules="/tmp/pf_rules.conf"
 sudo pfctl -sr > "$tmp_rules"
-if grep -q "$hostname" "$tmp_rules"; then
-    echo "⚠️ Host $hostname is blocked by pf. Unblocking..."
-    grep -v "$hostname" "$tmp_rules" | sudo tee "$tmp_rules.filtered" > /dev/null
-    sudo pfctl -f "$tmp_rules.filtered"
-    sudo pfctl -e
-    echo "✅ Host $hostname was unblocked."
+if [ ! -s "$tmp_rules" ]; then
+    echo "✅ No pf rules found. Skipping pf check."
 else
-    echo "✅ Host $hostname is not blocked by paket filter."
+    if grep -q "$hostname" "$tmp_rules"; then
+        echo "⚠️ Host $hostname is blocked by pf. Unblocking..."
+        grep -v "$hostname" "$tmp_rules" | sudo tee "$tmp_rules.filtered" > /dev/null
+        sudo pfctl -f "$tmp_rules.filtered"
+        sudo pfctl -e
+        echo "✅ Host $hostname was unblocked."
+    else
+        echo "✅ Host $hostname is not blocked by paket filter."
+    fi
 fi
 
 echo "🔍 Checking firewall rules."

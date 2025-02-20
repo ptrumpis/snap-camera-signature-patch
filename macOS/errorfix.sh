@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "---------------------------------------"
-echo "macOS errorfix v1.4.2 with ($SHELL)"
+echo "macOS errorfix v1.4.2.1 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -98,8 +98,18 @@ fi
 
 echo "🔍 Sending request to host $server_url."
 if command -v curl > /dev/null; then
-    server_response=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "$server_url" 2>&1)
-    if [[ "$server_response" =~ ^[0-9]{3}$ ]]; then
+    server_response=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "$server_url" 2>&1)
+    if [[ "$server_response" == "000" ]]; then
+        echo "❌ Error: The server $server_url cannot be reached. Checking details..."
+
+        echo "🔍 Running: curl -v --connect-timeout 5 $server_url"
+        curl -v --connect-timeout 5 "$server_url"
+        
+        echo "🔍 Running: curl -v --insecure --connect-timeout 5 $server_url"
+        curl -v --insecure --connect-timeout 5 "$server_url"
+
+        exit 1
+    elif [[ "$server_response" =~ ^[0-9]{3}$ ]]; then
         if [[ "$server_response" != "200" ]]; then
             echo "❌ Error: The server $server_url responded with status: $server_response"
             exit 1

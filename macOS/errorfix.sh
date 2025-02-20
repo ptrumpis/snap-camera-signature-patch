@@ -249,6 +249,12 @@ ioreg -l | grep -i "DAL"
 echo "🔍 Checking virtual webcam installation."
 system_profiler SPCameraDataType | grep -i -A 5 Snap
 
+echo "🔄 Killing/Restarting internal camera processes..."
+sudo killall VDCAssistant
+sudo killall AppleCameraAssistant
+sudo killall appleh13camerad
+sudo launchctl kickstart -k system/com.apple.appleh13camerad 2>/dev/null
+
 echo "🔍 Checking 'appleh13camerad' service."
 if [ -f "/System/Library/LaunchDaemons/com.apple.appleh13camerad.plist" ]; then
     if sudo launchctl list | grep -q "com.apple.appleh13camerad"; then
@@ -266,10 +272,6 @@ if [ -f "/System/Library/LaunchDaemons/com.apple.appleh13camerad.plist" ]; then
         fi
     fi
 fi
-
-echo "🔄 Restarting 'VDCAssistant' and 'AppleCameraAssistant' processes..."
-sudo killall VDCAssistant
-sudo killall AppleCameraAssistant
 
 echo "🔍 Checking System Integrity Protection (SIP) status."
 sip_status=$(csrutil status | grep -o "enabled")

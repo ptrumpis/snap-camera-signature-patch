@@ -67,7 +67,10 @@ If you still have problems opening the application, you can try a few more thing
 
 1. Read this [📖 Troubleshooting Mac OS - Snap Camera can't be opened](https://github.com/ptrumpis/snap-camera-server/wiki/Troubleshooting-Mac-OS)
 2. Run the macOS [errorfix.sh](https://github.com/ptrumpis/snap-camera-signature-patch/blob/master/macOS/errorfix.sh) script inside your Terminal application
-3. Watch the macOS video guide below.
+   ```bash
+   sudo /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/ptrumpis/snap-camera-signature-patch/master/macOS/errorfix.sh)"
+   ```
+4. Watch the macOS video guide below.
 
 --- 
 

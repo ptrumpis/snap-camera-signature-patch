@@ -249,10 +249,8 @@ ioreg -l | grep -i "DAL"
 echo "🔍 Checking virtual webcam installation."
 system_profiler SPCameraDataType | grep -i -A 5 Snap
 
-echo "🔄 Killing/Restarting internal camera processes..."
-sudo killall VDCAssistant
-sudo killall AppleCameraAssistant
-sudo killall appleh13camerad
+echo "🔄 Killing/Restarting camera related processes..."
+sudo killall VDCAssistant AppleCameraAssistant appleh13camerad
 sudo launchctl kickstart -k system/com.apple.appleh13camerad 2>/dev/null
 
 echo "🔍 Checking 'appleh13camerad' service."

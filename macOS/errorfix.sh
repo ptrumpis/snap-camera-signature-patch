@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "---------------------------------------"
-echo "macOS errorfix v1.4.2.1 with ($SHELL)"
+echo "macOS errorfix v1.4.3 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -9,26 +9,69 @@ echo "OS Version: $OS_version"
 echo "Architecture: $architecture"
 echo "---------------------------------------"
 
-if pgrep -x "Snap Camera" > /dev/null; then
-    echo "✅ Snap Camera is running. Terminating application."
-    pkill -x "Snap Camera"
-fi
-
-if [ ! -d "/Applications/Snap Camera.app" ]; then
-    echo "❌ Error: Snap Camera.app directory does not exist."
-    exit 1
-fi
-
-if [ ! -f "/Applications/Snap Camera.app/Contents/MacOS/Snap Camera" ]; then
-    echo "❌ Error: Snap Camera binary does not exist."
-    exit 1
-fi
-
 ip_to_check="127.0.0.1"
 hostname="studio-app.snapchat.com"
 server_url="https://$hostname"
 app_path="/Applications/Snap Camera.app"
 binary_path="$app_path/Contents/MacOS/Snap Camera"
+cert_file="studio-app.snapchat.com.crt"
+
+if pgrep -x "Snap Camera" > /dev/null; then
+    echo "✅ Snap Camera is running. Terminating application."
+    pkill -x "Snap Camera"
+fi
+
+if [ ! -d "$app_path" ]; then
+    echo "❌ Error: Snap Camera.app directory does not exist."
+    exit 1
+fi
+
+if [ ! -f "$binary_path" ]; then
+    echo "❌ Error: Snap Camera binary does not exist."
+    exit 1
+fi
+
+function verify_directory() {
+    local dir="$1"
+    if [[ -d "$dir" && -f "$dir/server.js" && -d "$dir/ssl" && -f "$dir/ssl/$cert_file" ]]; then
+        return 0  # Valid directory
+    else
+        return 1  # Invalid directory
+    fi
+}
+
+while true; do
+    read -rp "📁 Please provide the path to the Snap Camera Server directory: " DIRECTORY
+    if verify_directory "$DIRECTORY"; then
+        break
+    else
+        echo "⚠️ Invalid directory! Unable to find 'ssl/$cert_file'."
+    fi
+done
+
+echo "🛠️ Fixing possible SSL trust issues..."
+cert_path="$DIRECTORY/ssl/studio-app.snapchat.com.crt"
+cert_hash=$(openssl x509 -in "$cert_path" -noout -fingerprint -sha1 | sed 's/^.*=//')
+if [[ -z "$cert_hash" ]]; then
+    echo "❌ Error: Failed to read certificate fingerprint! Please check the certificate file."
+    exit 1
+else
+    security delete-certificate -Z "$cert_hash" ~/Library/Keychains/login.keychain-db 2>/dev/null && echo "⚪ Removed old certificate from Login Keychain."
+    sudo security delete-certificate -Z "$cert_hash" /Library/Keychains/System.keychain 2>/dev/null && echo "⚪ Removed old certificate from System Keychain."
+fi
+if security add-trusted-cert -d -r trustRoot -k ~/Library/Keychains/login.keychain-db "$cert_path"; then
+    echo "✅ Imported and trusted certificate in Login Keychain."
+else
+    echo "❌ Error: Failed to mark certificate as trusted in Login Keychain!"
+    exit 1
+fi
+if sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$cert_path"; then
+    echo "✅ Imported and trusted certificate in System Keychain."
+else
+    echo "❌ Error: Failed to mark certificate as trusted in System Keychain!"
+    exit 1
+fi
+echo "✅ SSL certificate OK."
 
 echo "🔍 Checking /etc/hosts entries."
 if grep -q "^$ip_to_check[[:space:]]\+$hostname" /etc/hosts; then

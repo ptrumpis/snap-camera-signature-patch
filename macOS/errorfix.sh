@@ -187,7 +187,7 @@ else
     echo "⚠️ Unknown MD5 checksum '$md5_result'."
 fi
 
-echo "⚪ Making the binary executable."
+echo "⚪ Making the Snap Camera binary executable."
 chmod +x "$binary_path"
 
 echo "⚪ Removing the macOS code signing."
@@ -221,12 +221,19 @@ fi
 echo "⚪ Removing extended file attributes."
 sudo xattr -cr "$app_path"
 
-echo "⚪ Re-signing the application."
+echo "⚪ Re-signing the Snap Camera application."
 if sudo codesign --force --deep --sign - "$app_path"; then
     echo "✅ Re-signing was successful."
 else
     echo "❌ Error: Re-signing failed."
     exit 1
+fi
+
+echo "⚪ Adding Snap Camera to Gatekeeper exceptions."
+if sudo spctl --add "$app_path"; then
+    echo "✅ Snap Camera successfully added to Gatekeeper exceptions."
+else
+    echo "⚠️ Failed to add Snap Camera to Gatekeeper exceptions!"
 fi
 
 echo "🔍 Re-Generating MD5 checksum of the Snap Camera binary file."

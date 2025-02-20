@@ -40,7 +40,7 @@ fi
 
 echo "🔍 Checking pf-rules."
 tmp_rules="/tmp/pf_rules.conf"
-sudo pfctl -sr > "$tmp_rules"
+sudo pfctl -sr 2>/dev/null > "$tmp_rules"
 if [ ! -s "$tmp_rules" ]; then
     echo "✅ No pf rules found. Skipping pf check."
 else
@@ -51,7 +51,7 @@ else
         sudo pfctl -e
         echo "✅ Host $hostname was unblocked."
     else
-        echo "✅ Host $hostname is not blocked by paket filter."
+        echo "✅ Host $hostname is not blocked by pf."
     fi
 fi
 

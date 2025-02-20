@@ -68,10 +68,9 @@ fi
 if sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$cert_path"; then
     echo "✅ Imported and trusted certificate in System Keychain."
 else
-    echo "❌ Error: Failed to mark certificate as trusted in System Keychain!"
-    exit 1
+    # Login Keychain should be sufficient
+    echo "⚠️ Warning: Failed to mark certificate as trusted in System Keychain!"
 fi
-echo "✅ SSL certificate OK."
 
 echo "🔍 Checking /etc/hosts entries."
 if grep -q "^$ip_to_check[[:space:]]\+$hostname" /etc/hosts; then
@@ -246,6 +245,13 @@ echo "✅ New MD5 checksum: '$md5_new'."
 
 echo "🔍 Checking I/O registry for DAL entries."
 ioreg -l | grep -i "DAL"
+
+sip_status=$(csrutil status | grep -o "enabled")
+if [[ "$sip_status" == "enabled" ]]; then
+    echo "⚠️ Warning: System Integrity Protection (SIP) is enabled. Some operations may be restricted!"
+else
+    echo "✅ System Integrity Protection (SIP) is disabled."
+fi
 
 if [ "$architecture" == "arm64" ]; then
     echo "✅ Running on ARM architecture. Starting Snap Camera application with Rosetta..."

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "......................................."
 echo "macOS errorfix v1.4.4 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
@@ -7,6 +8,7 @@ OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknow
 architecture=$(uname -m)
 echo "OS Version: $OS_version"
 echo "Architecture: $architecture"
+echo "......................................."
 
 ip_to_check="127.0.0.1"
 hostname="studio-app.snapchat.com"

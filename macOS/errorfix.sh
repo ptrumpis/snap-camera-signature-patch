@@ -1,20 +1,20 @@
 #!/bin/bash
-echo "---------------------------------------"
-echo "macOS errorfix v1.4.3.1 with ($SHELL)"
+
+echo "macOS errorfix v1.4.4 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
 architecture=$(uname -m)
 echo "OS Version: $OS_version"
 echo "Architecture: $architecture"
-echo "---------------------------------------"
 
 ip_to_check="127.0.0.1"
 hostname="studio-app.snapchat.com"
 server_url="https://$hostname"
 app_path="/Applications/Snap Camera.app"
-binary_path="$app_path/Contents/MacOS/Snap Camera"
-cert_file="studio-app.snapchat.com.crt"
+binary_path="$app_path/Contents/MacOS"
+binary_file="$app_path/$binary_path/Snap Camera"
+cert_file="$hostname.crt"
 
 if pgrep -x "Snap Camera" > /dev/null; then
     echo "✅ Snap Camera is running. Terminating application."
@@ -26,7 +26,7 @@ if [ ! -d "$app_path" ]; then
     exit 1
 fi
 
-if [ ! -f "$binary_path" ]; then
+if [ ! -f "$binary_file" ]; then
     echo "❌ Error: Snap Camera binary does not exist."
     exit 1
 fi
@@ -72,7 +72,96 @@ else
     echo "⚠️ Warning: Failed to mark certificate as trusted in System Keychain!"
 fi
 
-echo "🔍 Checking /etc/hosts entries."
+echo "🔄 Generating MD5 checksum of the Snap Camera binary file."
+if command -v md5sum > /dev/null; then
+    md5_result=$(md5sum "$binary_file" | awk '{print $1}')
+else
+    md5_result=$(md5 -q "$binary_file")
+fi
+
+if [ "$md5_result" = "8dc456e29478a0cdfaedefac282958e7" ]; then
+    echo "✅ MD5 checksum result: Original binary with original code signing."
+elif [ "$md5_result" = "15ad19c477d5d246358d68a711e29a6e" ]; then
+    echo "✅ MD5 checksum result: Original binary no code signing."
+elif [ "$md5_result" = "1ac420d1828a3d754e99793af098f830" ]; then
+    echo "✅ MD5 checksum result: Patched binary with original code signing."
+elif [ "$md5_result" = "e2ed1f2e502617392060270fa6e5e979" ]; then
+    echo "✅ MD5 checksum result: Patched binary no code signing."
+else
+    echo "⚠️ Unknown MD5 checksum '$md5_result'."
+fi
+
+echo "🛠️ Making the Snap Camera binary executable."
+chmod +x "$binary_file"
+
+echo "🛠️ Removing the macOS code signing."
+if ! sudo codesign --remove-signature "$app_path"; then
+    echo "⚠️ Directly removing signature from app bundle failed. Try recursively."
+
+    if find "$app_path" -type f -perm +111 &>/dev/null; then
+        perm_flag="+111"
+    else
+        perm_flag="/111"
+    fi
+
+    success=true
+    while IFS= read -r file; do
+        if ! sudo codesign --remove-signature "$file"; then
+            echo "❌ Error: removing signature for file: $file"
+            success=false
+        fi
+    done < <(find "$app_path" -type f -perm $perm_flag)
+
+    if $success; then
+        echo "✅ All signatures were successfully removed."
+    else
+        echo "❌ Error: At least one file could not be freed from the signature."
+        exit 1
+    fi
+else
+    echo "✅ Signature removal was successful."
+fi
+
+if [ "$architecture" == "arm64" ]; then
+    echo "🔍 ARM architecture detected."
+
+    if [ ! -f "$binary_path/Snap_Camera_real" ]; then
+        echo "🛠️ Creating x86 wrapper script..."
+        mv "$binary_path/Snap Camera" "$binary_path/Snap_Camera_real"
+        echo '#!/bin/bash
+        arch -x86_64 "'"$binary_path/Snap_Camera_real"'" "$@"' > "$binary_path/Snap Camera"
+        chmod +x "$binary_path/Snap Camera"
+        binary_file="$binary_path/Snap_Camera_real"
+    fi
+fi
+
+echo "🛠️ Removing extended file attributes."
+sudo xattr -cr "$app_path"
+
+echo "🛠️ Re-signing the Snap Camera application."
+if sudo codesign --force --deep --sign - "$app_path"; then
+    echo "✅ Re-signing was successful."
+else
+    echo "❌ Error: Re-signing failed."
+    exit 1
+fi
+
+echo "🔄 Re-Generating MD5 checksum of the Snap Camera binary file."
+if command -v md5sum > /dev/null; then
+    md5_new=$(md5sum "$binary_file" | awk '{print $1}')
+else
+    md5_new=$(md5 -q "$binary_file")
+fi
+echo "✅ New MD5 checksum: '$md5_new'."
+
+echo "🛠️ Adding Snap Camera to Gatekeeper exceptions."
+if sudo spctl --add "$app_path"; then
+    echo "✅ Snap Camera successfully added to Gatekeeper exceptions."
+else
+    echo "⚠️ Failed to add Snap Camera to Gatekeeper exceptions!"
+fi
+
+echo "🔍 Checking '/etc/hosts' entry."
 if grep -q "^$ip_to_check[[:space:]]\+$hostname" /etc/hosts; then
     echo "✅ /etc/hosts entry $ip_to_check $hostname exists."
 else
@@ -167,81 +256,13 @@ else
     echo "❌ Error: The 'curl' command is not available. Please check in your browser that the URL $server_url is accessible."
 fi
 
-echo "🔄 Generating MD5 checksum of the Snap Camera binary file."
-if command -v md5sum > /dev/null; then
-    md5_result=$(md5sum "$binary_path" | awk '{print $1}')
+echo "🔍 Checking System Integrity Protection (SIP) status."
+sip_status=$(csrutil status | grep -o "enabled")
+if [[ "$sip_status" == "enabled" ]]; then
+    echo "⚠️ Warning: System Integrity Protection (SIP) is enabled. Some operations may be restricted!"
 else
-    md5_result=$(md5 -q "$binary_path")
+    echo "✅ System Integrity Protection (SIP) is disabled."
 fi
-
-if [ "$md5_result" = "8dc456e29478a0cdfaedefac282958e7" ]; then
-    echo "✅ MD5 checksum result: Original binary with original code signing."
-elif [ "$md5_result" = "15ad19c477d5d246358d68a711e29a6e" ]; then
-    echo "✅ MD5 checksum result: Original binary no code signing."
-elif [ "$md5_result" = "1ac420d1828a3d754e99793af098f830" ]; then
-    echo "✅ MD5 checksum result: Patched binary with original code signing."
-elif [ "$md5_result" = "e2ed1f2e502617392060270fa6e5e979" ]; then
-    echo "✅ MD5 checksum result: Patched binary no code signing."
-else
-    echo "⚠️ Unknown MD5 checksum '$md5_result'."
-fi
-
-echo "➡️ Making the Snap Camera binary executable."
-chmod +x "$binary_path"
-
-echo "➡️ Removing the macOS code signing."
-if ! sudo codesign --remove-signature "$app_path"; then
-    echo "⚠️ Directly removing signature from app bundle failed. Try recursively."
-
-    if find "$app_path" -type f -perm +111 &>/dev/null; then
-        perm_flag="+111"
-    else
-        perm_flag="/111"
-    fi
-
-    success=true
-    while IFS= read -r file; do
-        if ! sudo codesign --remove-signature "$file"; then
-            echo "❌ Error: removing signature for file: $file"
-            success=false
-        fi
-    done < <(find "$app_path" -type f -perm $perm_flag)
-
-    if $success; then
-        echo "✅ All signatures were successfully removed."
-    else
-        echo "❌ Error: At least one file could not be freed from the signature."
-        exit 1
-    fi
-else
-    echo "✅ Signature removal was successful."
-fi
-
-echo "➡️ Removing extended file attributes."
-sudo xattr -cr "$app_path"
-
-echo "➡️ Re-signing the Snap Camera application."
-if sudo codesign --force --deep --sign - "$app_path"; then
-    echo "✅ Re-signing was successful."
-else
-    echo "❌ Error: Re-signing failed."
-    exit 1
-fi
-
-echo "➡️ Adding Snap Camera to Gatekeeper exceptions."
-if sudo spctl --add "$app_path"; then
-    echo "✅ Snap Camera successfully added to Gatekeeper exceptions."
-else
-    echo "⚠️ Failed to add Snap Camera to Gatekeeper exceptions!"
-fi
-
-echo "🔄 Re-Generating MD5 checksum of the Snap Camera binary file."
-if command -v md5sum > /dev/null; then
-    md5_new=$(md5sum "$binary_path" | awk '{print $1}')
-else
-    md5_new=$(md5 -q "$binary_path")
-fi
-echo "✅ New MD5 checksum: '$md5_new'."
 
 echo "🔍 Checking I/O registry for DAL entries."
 ioreg -l | grep -i "DAL"
@@ -250,7 +271,7 @@ echo "🔍 Checking virtual webcam installation."
 system_profiler SPCameraDataType | grep -i -A 5 Snap
 
 echo "🔄 Killing/Restarting camera related processes..."
-sudo killall VDCAssistant AppleCameraAssistant appleh13camerad
+sudo killall VDCAssistant AppleCameraAssistant 2>/dev/null
 sudo launchctl kickstart -k system/com.apple.appleh13camerad 2>/dev/null
 
 echo "🔍 Checking 'appleh13camerad' service."
@@ -271,19 +292,12 @@ if [ -f "/System/Library/LaunchDaemons/com.apple.appleh13camerad.plist" ]; then
     fi
 fi
 
-echo "🔍 Checking System Integrity Protection (SIP) status."
-sip_status=$(csrutil status | grep -o "enabled")
-if [[ "$sip_status" == "enabled" ]]; then
-    echo "⚠️ Warning: System Integrity Protection (SIP) is enabled. Some operations may be restricted!"
-else
-    echo "✅ System Integrity Protection (SIP) is disabled."
-fi
-
 if [ "$architecture" == "arm64" ]; then
-    echo "✅ Running on ARM architecture. Starting Snap Camera application with Rosetta..."
-    arch -x86_64 "$binary_path"
+    echo "🚀 Starting Snap Camera application with Rosetta..."
+    arch -x86_64 "$binary_file" & disown
 else
-    echo "✅ You should be able to open Snap Camera now."
+    echo "🚀 Starting Snap Camera..."
+    open "$app_path" & disown
 fi
 
 echo "If you continue to have problems, please re-download and re-install Snap Camera from:"

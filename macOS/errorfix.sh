@@ -163,6 +163,25 @@ else
     echo "⚠️ Failed to add Snap Camera to Gatekeeper exceptions!"
 fi
 
+plugin_dir="/Library/CoreMediaIO/Plug-Ins/DAL"
+target_plugin="$plugin_dir/SnapCamera.plugin"
+if [ -d "$plugin_dir" ] && [ ! -f "$target_plugin" ]; then
+    echo "⚠️ SnapCamera.plugin is missing."
+    if [ -f "$binary_path/SnapCamera.plugin" ]; then
+        echo "🛠️ Re-installing Snap Camera Plugin."
+        sudo cp -R "$binary_path/SnapCamera.plugin" "$plugin_dir"
+        if [ -f "$target_plugin" ]; then
+            sudo chown -R root:wheel "$target_plugin"
+            sudo chmod -R 755 "$target_plugin"
+            sudo xattr -dr com.apple.quarantine "$target_plugin"
+            sudo spctl --add "$target_plugin"
+            echo "✅ SnapCamera.plugin successfully installed."
+        else
+             echo "⚠️ Failed to re-install SnapCamera.plugin."
+        fi
+    fi
+fi
+
 echo "🔍 Checking '/etc/hosts' entry."
 if grep -q "^$ip_to_check[[:space:]]\+$hostname" /etc/hosts; then
     echo "✅ /etc/hosts entry $ip_to_check $hostname exists."
@@ -284,8 +303,7 @@ if [ -f "/System/Library/LaunchDaemons/com.apple.appleh13camerad.plist" ]; then
         echo "⚠️ The service 'appleh13camerad' is not running."
         echo "🔄 Attempting to start the service..."
         sudo launchctl bootstrap system "/System/Library/LaunchDaemons/com.apple.appleh13camerad.plist"
-        
-        # Erneute Prüfung nach dem Startversuch
+
         if sudo launchctl list | grep -q "com.apple.appleh13camerad"; then
             echo "✅ Service 'appleh13camerad' successfully started."
         else

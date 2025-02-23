@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "......................................."
-echo "macOS errorfix v1.4.4 with ($SHELL)"
+echo "macOS errorfix v1.5.0 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -19,7 +19,7 @@ binary_file="$app_path/$binary_path/Snap Camera"
 cert_file="$hostname.crt"
 
 if pgrep -x "Snap Camera" > /dev/null; then
-    echo "✅ Snap Camera is running. Terminating application."
+    echo "⚠️ Snap Camera is running. Terminating application."
     pkill -x "Snap Camera"
 fi
 
@@ -36,30 +36,52 @@ fi
 function verify_directory() {
     local dir="$1"
     if [[ -d "$dir" && -f "$dir/server.js" && -d "$dir/ssl" && -f "$dir/ssl/$cert_file" ]]; then
-        return 0  # Valid directory
+        return 0
     else
-        return 1  # Invalid directory
+        return 1
     fi
 }
 
-while true; do
-    read -rp "📁 Please provide the path to the Snap Camera Server directory: " DIRECTORY
-    if verify_directory "$DIRECTORY"; then
-        break
+container_id=$(docker ps -q -a --filter "name=snap" --filter "name=webapp" | head -n 1)
+if [[ -n "$container_id" ]]; then
+    running=$(docker inspect --format '{{.State.Running}}' "$container_id")
+    if [[ "$running" == "true" ]]; then
+        echo "✅ Snap Camera Server is running: $container_id"
     else
-        echo "⚠️ Invalid directory! Unable to find 'ssl/$cert_file'."
+        echo "❌ Snap Camera Server is not runnning: $container_id"
+        exit 1
     fi
-done
+else
+    echo "❌ Unable to detect Snap Camera Server on your system."
+    echo "ℹ️ Please make sure Snap Camera Server is set up and running."
+    echo "🌐 Download URL: https://github.com/ptrumpis/snap-camera-server/releases/latest"
+    exit 1
+fi
+
+project_dir=$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }}' "$container_id" 2>/dev/null)
+if [[ -z "$project_dir" || ! -d "$project_dir" || ! $(verify_directory "$project_dir") ]]; then
+    echo "⚠️ The server directory could not be determined automatically."
+    while true; do
+        read -rp "📁 Please provide the path to the Snap Camera Server directory: " user_input
+        if verify_directory "$user_input"; then
+            project_dir="$user_input"
+            break
+        else
+            echo "⚠️ Invalid directory! Unable to find 'ssl/$cert_file'."
+        fi
+    done
+fi
+echo "✅ Snap Camera Server directory: $project_dir"
 
 echo "🛠️ Fixing possible SSL trust issues..."
-cert_path="$DIRECTORY/ssl/studio-app.snapchat.com.crt"
+cert_path="$project_dir/ssl/studio-app.snapchat.com.crt"
 cert_hash=$(openssl x509 -in "$cert_path" -noout -fingerprint -sha1 | sed 's/^.*=//')
 if [[ -z "$cert_hash" ]]; then
     echo "❌ Error: Failed to read certificate fingerprint! Please check the certificate file."
     exit 1
 else
-    security delete-certificate -Z "$cert_hash" ~/Library/Keychains/login.keychain-db 2>/dev/null && echo "⚪ Removed old certificate from Login Keychain."
-    sudo security delete-certificate -Z "$cert_hash" /Library/Keychains/System.keychain 2>/dev/null && echo "⚪ Removed old certificate from System Keychain."
+    security delete-certificate -Z "$cert_hash" ~/Library/Keychains/login.keychain-db 2>/dev/null && echo "🗑️ Removed old certificate from Login Keychain."
+    sudo security delete-certificate -Z "$cert_hash" /Library/Keychains/System.keychain 2>/dev/null && echo "🗑️ Removed old certificate from System Keychain."
 fi
 if security add-trusted-cert -d -r trustRoot -k ~/Library/Keychains/login.keychain-db "$cert_path"; then
     echo "✅ Imported and trusted certificate in Login Keychain."
@@ -99,13 +121,11 @@ chmod +x "$binary_file"
 echo "🛠️ Removing the macOS code signing."
 if ! sudo codesign --remove-signature "$app_path"; then
     echo "⚠️ Directly removing signature from app bundle failed. Try recursively."
-
     if find "$app_path" -type f -perm +111 &>/dev/null; then
         perm_flag="+111"
     else
         perm_flag="/111"
     fi
-
     success=true
     while IFS= read -r file; do
         if ! sudo codesign --remove-signature "$file"; then
@@ -113,7 +133,6 @@ if ! sudo codesign --remove-signature "$app_path"; then
             success=false
         fi
     done < <(find "$app_path" -type f -perm $perm_flag)
-
     if $success; then
         echo "✅ All signatures were successfully removed."
     else
@@ -126,7 +145,6 @@ fi
 
 if [ "$architecture" == "arm64" ]; then
     echo "🔍 ARM architecture detected."
-
     if [ ! -f "$binary_path/Snap_Camera_real" ]; then
         echo "🛠️ Creating x86 wrapper script..."
         mv "$binary_path/Snap Camera" "$binary_path/Snap_Camera_real"
@@ -216,7 +234,6 @@ if [ -f "/Library/Preferences/com.apple.alf.plist" ]; then
             ;;
        1|2)
             echo "✅ Firewall is enabled. Checking if Snap Camera is blocked..."
-
             blocked_apps=$(sudo defaults read /Library/Preferences/com.apple.alf.plist | grep -A2 "$app_path" | grep -i "block")
             if [[ -n "$blocked_apps" ]]; then
                 echo "⚠️ Snap Camera is blocked by firewall. Unblocking..."
@@ -225,7 +242,6 @@ if [ -f "/Library/Preferences/com.apple.alf.plist" ]; then
             else
                 echo "✅ Snap Camera is not blocked by firewall."
             fi
-
             if [[ "$firewall_state" -eq 2 ]]; then
                 echo "⚠️ Firewall is in strict mode. Ensuring that Snap Camera is allowed..."
                 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add "$app_path"
@@ -245,7 +261,7 @@ echo "🔍 Sending ping to host $hostname."
 if ping -c 1 -W 2000 "$hostname" > /dev/null 2>&1; then
     echo "✅ Ping to host $hostname succesful."
 else
-    echo "❌ Ping to host $hostname failed."
+    echo "⚠️ Ping to host $hostname failed."
 fi
 
 echo "🔍 Sending request to host $server_url."
@@ -253,13 +269,10 @@ if command -v curl > /dev/null; then
     server_response=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "$server_url" 2>&1)
     if [[ "$server_response" == "000" ]]; then
         echo "❌ Error: The server $server_url cannot be reached. Checking details..."
-
         echo "🔍 Running: curl -v --connect-timeout 5 $server_url"
         curl -v --connect-timeout 5 "$server_url"
-        
         echo "🔍 Running: curl -v --insecure --connect-timeout 5 $server_url"
         curl -v --insecure --connect-timeout 5 "$server_url"
-
         exit 1
     elif [[ "$server_response" =~ ^[0-9]{3}$ ]]; then
         if [[ "$server_response" != "200" ]]; then
@@ -303,7 +316,6 @@ if [ -f "/System/Library/LaunchDaemons/com.apple.appleh13camerad.plist" ]; then
         echo "⚠️ The service 'appleh13camerad' is not running."
         echo "🔄 Attempting to start the service..."
         sudo launchctl bootstrap system "/System/Library/LaunchDaemons/com.apple.appleh13camerad.plist"
-
         if sudo launchctl list | grep -q "com.apple.appleh13camerad"; then
             echo "✅ Service 'appleh13camerad' successfully started."
         else
@@ -320,5 +332,5 @@ else
     open "$app_path" & disown
 fi
 
-echo "If you continue to have problems, please re-download and re-install Snap Camera from:"
-echo "https://bit.ly/snpcm"
+echo "ℹ️ If you continue to have problems, please re-download and re-install Snap Camera from:"
+echo "🌐 https://bit.ly/snpcm"

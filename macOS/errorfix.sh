@@ -15,7 +15,7 @@ hostname="studio-app.snapchat.com"
 server_url="https://$hostname"
 app_path="/Applications/Snap Camera.app"
 binary_path="$app_path/Contents/MacOS"
-binary_file="$app_path/$binary_path/Snap Camera"
+binary_file="$binary_path/Snap Camera"
 cert_file="$hostname.crt"
 
 if pgrep -x "Snap Camera" > /dev/null; then
@@ -94,6 +94,11 @@ if sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.k
 else
     # Login Keychain should be sufficient
     echo "⚠️ Warning: Failed to mark certificate as trusted in System Keychain!"
+fi
+
+if [ -f "$binary_path/Snap_Camera_real" ]; then
+    echo "🧾 ARM Wrapper script detected."
+    binary_file="$binary_path/Snap_Camera_real"
 fi
 
 echo "🔄 Generating MD5 checksum of the Snap Camera binary file."
@@ -202,9 +207,9 @@ fi
 
 echo "🔍 Checking '/etc/hosts' entry."
 if grep -q "^$ip_to_check[[:space:]]\+$hostname" /etc/hosts; then
-    echo "✅ /etc/hosts entry $ip_to_check $hostname exists."
+    echo "✅ '/etc/hosts' entry $ip_to_check $hostname exists."
 else
-    echo "❌ Error: /etc/hosts entrry $ip_to_check $hostname does not exist."
+    echo "❌ Error: '/etc/hosts' entry $ip_to_check $hostname does not exist."
     exit 1
 fi
 

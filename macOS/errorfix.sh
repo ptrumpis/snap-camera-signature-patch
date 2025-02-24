@@ -7,7 +7,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 echo "......................................."
-echo "macOS errorfix v1.5.1 with ($SHELL)"
+echo "macOS errorfix v1.5.2 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -83,6 +83,9 @@ if [[ -z "$project_dir" || ! -d "$project_dir" || ! $(verify_directory "$project
     done
 fi
 echo "✅ Snap Camera Server directory: $project_dir"
+
+echo "🛠️ Fixing possible SSL access right issues."
+sudo chown -R $(id -un):$(id -gn) "$project_dir/ssl/*"
 
 echo "🛠️ Fixing possible SSL trust issues..."
 cert_path="$project_dir/ssl/studio-app.snapchat.com.crt"

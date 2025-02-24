@@ -1,7 +1,13 @@
 #!/bin/bash
 
+if [[ $EUID -ne 0 ]]; then
+    echo "🔑 This script requires administrator rights. Please enter your password:"
+    exec sudo "$0" "$@"
+    exit 1
+fi
+
 echo "......................................."
-echo "macOS errorfix v1.5.0 with ($SHELL)"
+echo "macOS errorfix v1.5.1 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -62,7 +68,12 @@ project_dir=$(docker inspect --format '{{ index .Config.Labels "com.docker.compo
 if [[ -z "$project_dir" || ! -d "$project_dir" || ! $(verify_directory "$project_dir") ]]; then
     echo "⚠️ The server directory could not be determined automatically."
     while true; do
-        read -rp "📁 Please provide the path to the Snap Camera Server directory: " user_input
+        user_input=$(osascript -e 'tell app "Finder" to set folderPath to (choose folder with prompt "Please select the Snap Camera Server directory:")' 2>/dev/null)
+        if [[ $? -ne 0 ]]; then
+            echo "❌ User canceled directory selection."
+            exit 1
+        fi
+        user_input=$(echo "$user_input" | sed 's/^ *//g' | sed 's/ *$//g')
         if verify_directory "$user_input"; then
             project_dir="$user_input"
             break
@@ -80,10 +91,12 @@ if [[ -z "$cert_hash" ]]; then
     echo "❌ Error: Failed to read certificate fingerprint! Please check the certificate file."
     exit 1
 else
-    security delete-certificate -Z "$cert_hash" ~/Library/Keychains/login.keychain-db 2>/dev/null && echo "🗑️ Removed old certificate from Login Keychain."
+    sudo security delete-certificate -c "$hostname" ~/Library/Keychains/login.keychain-db 2>/dev/null && echo "🗑️ Removed old '$hostname' certificate from Login Keychain."
+    sudo security delete-certificate -Z "$cert_hash" ~/Library/Keychains/login.keychain-db 2>/dev/null && echo "🗑️ Removed old certificate from Login Keychain."
+    sudo security delete-certificate -c "$hostname" /Library/Keychains/System.keychain 2>/dev/null && echo "🗑️ Removed old '$hostname' certificate from System Keychain."
     sudo security delete-certificate -Z "$cert_hash" /Library/Keychains/System.keychain 2>/dev/null && echo "🗑️ Removed old certificate from System Keychain."
 fi
-if security add-trusted-cert -d -r trustRoot -k ~/Library/Keychains/login.keychain-db "$cert_path"; then
+if sudo security add-trusted-cert -d -r trustRoot -k ~/Library/Keychains/login.keychain-db "$cert_path"; then
     echo "✅ Imported and trusted certificate in Login Keychain."
 else
     echo "❌ Error: Failed to mark certificate as trusted in Login Keychain!"

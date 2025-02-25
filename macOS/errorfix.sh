@@ -319,9 +319,6 @@ else
     echo "✅ System Integrity Protection (SIP) is disabled."
 fi
 
-echo "🔍 Checking I/O registry for DAL entries."
-ioreg -l | grep -i "DAL"
-
 echo "🔍 Checking virtual webcam installation."
 system_profiler SPCameraDataType | grep -i -A 5 Snap
 

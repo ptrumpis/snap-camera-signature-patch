@@ -204,12 +204,12 @@ fi
 
 plugin_dir="/Library/CoreMediaIO/Plug-Ins/DAL"
 target_plugin="$plugin_dir/SnapCamera.plugin"
-if [ -d "$plugin_dir" ] && [ ! -f "$target_plugin" ]; then
+if [ -d "$plugin_dir" ] && [ ! -e "$target_plugin" ]; then
     echo "⚠️ SnapCamera.plugin is missing."
-    if [ -f "$binary_path/SnapCamera.plugin" ]; then
+    if [ -d "$binary_path/SnapCamera.plugin" ]; then
         echo "🛠️ Re-installing Snap Camera Plugin."
         sudo cp -R "$binary_path/SnapCamera.plugin" "$plugin_dir"
-        if [ -f "$target_plugin" ]; then
+        if [ -d "$target_plugin" ]; then
             sudo chown -R root:wheel "$target_plugin"
             sudo chmod -R 755 "$target_plugin"
             sudo xattr -dr com.apple.quarantine "$target_plugin"
@@ -218,6 +218,8 @@ if [ -d "$plugin_dir" ] && [ ! -f "$target_plugin" ]; then
         else
              echo "⚠️ Failed to re-install SnapCamera.plugin."
         fi
+    else
+        echo "⚠️ Source plugin not found at $binary_path/SnapCamera.plugin."
     fi
 fi
 

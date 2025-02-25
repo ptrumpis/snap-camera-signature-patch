@@ -7,7 +7,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 echo "......................................."
-echo "macOS errorfix v1.5.2 with ($SHELL)"
+echo "macOS errorfix v1.5.3 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -68,7 +68,7 @@ project_dir=$(docker inspect --format '{{ index .Config.Labels "com.docker.compo
 if [[ -z "$project_dir" || ! -d "$project_dir" || ! $(verify_directory "$project_dir") ]]; then
     echo "⚠️ The server directory could not be determined automatically."
     while true; do
-        user_input=$(osascript -e 'tell app "Finder" to set folderPath to (choose folder with prompt "Please select the Snap Camera Server directory:")' 2>/dev/null)
+        user_input=$(osascript -e 'tell app "Finder" to set folderPath to POSIX path of (choose folder with prompt "Please select the Snap Camera Server directory:")' 2>/dev/null)
         if [[ $? -ne 0 ]]; then
             echo "❌ User canceled directory selection."
             exit 1
@@ -78,7 +78,7 @@ if [[ -z "$project_dir" || ! -d "$project_dir" || ! $(verify_directory "$project
             project_dir="$user_input"
             break
         else
-            echo "⚠️ Invalid directory! Unable to find 'ssl/$cert_file'."
+            echo "⚠️ Invalid directory: '$user_input'! Unable to find 'ssl/$cert_file'."
         fi
     done
 fi

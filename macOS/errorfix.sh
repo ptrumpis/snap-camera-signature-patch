@@ -7,7 +7,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 echo "......................................."
-echo "macOS errorfix v1.5.3 with ($SHELL)"
+echo "macOS errorfix v1.5.4 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -39,15 +39,32 @@ if [ ! -f "$binary_file" ]; then
     exit 1
 fi
 
+function to_posix_path() {
+    local path="$1"
+    local resolved_path=""
+    if command -v greadlink >/dev/null 2>&1; then
+        resolved_path=$(greadlink -f "$path")
+    elif command -v perl >/dev/null 2>&1; then
+        resolved_path=$(perl -MCwd=realpath -e 'print realpath($ARGV[0])' "$path")
+    elif [[ -d "$path" ]]; then
+        resolved_path=$(cd "$path" && pwd -P)
+    elif [[ -f "$path" ]]; then
+        resolved_path="$(cd "$(dirname "$path")" && pwd -P)/$(basename "$path")"
+    fi
+    echo "${resolved_path%/}"
+}
+
 function verify_directory() {
-    local dir="$1"
-    if [[ -d "$dir" && -f "$dir/server.js" && -d "$dir/ssl" && -f "$dir/ssl/$cert_file" ]]; then
+    local dir
+    dir=$(to_posix_path "$1")
+    if [[ -d "$dir" && -f "$dir/server.js" && -d "$dir/ssl" ]]; then
         return 0
     else
         return 1
     fi
 }
 
+echo "🔍 Trying to detect Docker webapp container."
 container_id=$(docker ps -q -a --filter "name=snap" --filter "name=webapp" | head -n 1)
 if [[ -n "$container_id" ]]; then
     running=$(docker inspect --format '{{.State.Running}}' "$container_id")
@@ -58,13 +75,18 @@ if [[ -n "$container_id" ]]; then
         exit 1
     fi
 else
-    echo "❌ Unable to detect Snap Camera Server on your system."
-    echo "ℹ️ Please make sure Snap Camera Server is set up and running."
+    echo "❌ Unable to detect Snap Camera Server on your system. Please make sure Snap Camera Server is set up and running."
     echo "🌐 Download URL: https://github.com/ptrumpis/snap-camera-server/releases/latest"
     exit 1
 fi
 
+echo "🔍 Trying to determine server directory."
 project_dir=$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }}' "$container_id" 2>/dev/null)
+if [[ -n "$project_dir" ]]; then
+    echo "📁 Found: '$project_dir'."
+    project_dir=$(to_posix_path "$project_dir")
+fi
+
 if [[ -z "$project_dir" || ! -d "$project_dir" || ! $(verify_directory "$project_dir") ]]; then
     echo "⚠️ The server directory could not be determined automatically."
     while true; do
@@ -75,10 +97,10 @@ if [[ -z "$project_dir" || ! -d "$project_dir" || ! $(verify_directory "$project
         fi
         user_input=$(echo "$user_input" | sed 's/^ *//g' | sed 's/ *$//g')
         if verify_directory "$user_input"; then
-            project_dir="$user_input"
+            project_dir="${user_input%/}"
             break
         else
-            echo "⚠️ Invalid directory: '$user_input'! Unable to find 'ssl/$cert_file'."
+            echo "⚠️ Invalid directory: '$user_input'!"
         fi
     done
 fi
@@ -204,12 +226,13 @@ fi
 
 plugin_dir="/Library/CoreMediaIO/Plug-Ins/DAL"
 target_plugin="$plugin_dir/SnapCamera.plugin"
-if [ -d "$plugin_dir" ] && [ ! -e "$target_plugin" ]; then
+source_plugin="$binary_path/SnapCamera.plugin"
+if [[ -d "$plugin_dir" && ! -e "$target_plugin" ]]; then
     echo "⚠️ SnapCamera.plugin is missing."
-    if [ -d "$binary_path/SnapCamera.plugin" ]; then
+    if [[ -d "$source_plugin" ]]; then
         echo "🛠️ Re-installing Snap Camera Plugin."
-        sudo cp -R "$binary_path/SnapCamera.plugin" "$plugin_dir"
-        if [ -d "$target_plugin" ]; then
+        sudo cp -Rp "$source_plugin" "$plugin_dir"
+        if [[ -d "$target_plugin" ]]; then
             sudo chown -R root:wheel "$target_plugin"
             sudo chmod -R 755 "$target_plugin"
             sudo xattr -dr com.apple.quarantine "$target_plugin"
@@ -219,7 +242,7 @@ if [ -d "$plugin_dir" ] && [ ! -e "$target_plugin" ]; then
              echo "⚠️ Failed to re-install SnapCamera.plugin."
         fi
     else
-        echo "⚠️ Source plugin not found at $binary_path/SnapCamera.plugin."
+        echo "⚠️ Source plugin not found at $source_plugin."
     fi
 fi
 
@@ -352,5 +375,5 @@ else
     open "$app_path" & disown
 fi
 
-echo "ℹ️ If you continue to have problems, please re-download and re-install Snap Camera from:"
+echo "🆗 If you continue to have problems, please re-download and re-install Snap Camera from:"
 echo "🌐 https://bit.ly/snpcm"

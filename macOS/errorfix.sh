@@ -7,7 +7,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 echo "......................................."
-echo "macOS errorfix v1.5.4 with ($SHELL)"
+echo "macOS errorfix v1.6.0 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -16,7 +16,7 @@ echo "OS Version: $OS_version"
 echo "Architecture: $architecture"
 echo "......................................."
 
-ip_to_check="127.0.0.1"
+server_ip="127.0.0.1"
 hostname="studio-app.snapchat.com"
 server_url="https://$hostname"
 app_path="/Applications/Snap Camera.app"
@@ -31,11 +31,13 @@ fi
 
 if [ ! -d "$app_path" ]; then
     echo "❌ Error: Snap Camera.app directory does not exist."
+    echo "🌐 Please download and install from: https://bit.ly/snpcm"
     exit 1
 fi
 
 if [ ! -f "$binary_file" ]; then
     echo "❌ Error: Snap Camera binary does not exist."
+    echo "🌐 Please re-download and install from: https://bit.ly/snpcm"
     exit 1
 fi
 
@@ -71,13 +73,11 @@ if [[ -n "$container_id" ]]; then
     if [[ "$running" == "true" ]]; then
         echo "✅ Snap Camera Server is running: $container_id"
     else
-        echo "❌ Snap Camera Server is not runnning: $container_id"
-        exit 1
+        echo "⚠️ Snap Camera Server is not runnning: $container_id"
     fi
 else
-    echo "❌ Unable to detect Snap Camera Server on your system. Please make sure Snap Camera Server is set up and running."
+    echo "⚠️ Unable to auto-detect Snap Camera Server on your system. Please make sure Snap Camera Server is set up and running."
     echo "🌐 Download URL: https://github.com/ptrumpis/snap-camera-server/releases/latest"
-    exit 1
 fi
 
 echo "🔍 Trying to determine server directory."
@@ -105,6 +105,53 @@ if [[ -z "$project_dir" || ! -d "$project_dir" || ! $(verify_directory "$project
     done
 fi
 echo "✅ Snap Camera Server directory: $project_dir"
+
+echo "🔍 Checking if an .env file exists."
+envPath="$project_dir/.env"
+exampleEnvPath="$project_dir/example.env"
+if [[ ! -f "$envPath" ]]; then
+    echo "⚠️ An .env file was not found."
+    if [[ -f "$exampleEnvPath" ]]; then
+        cp "$exampleEnvPath" "$envPath"
+        echo "✅ An .env file was created from example.env."
+    else
+        echo "❌ Error: Neither .env nor example.env found."
+        exit 1
+    fi
+else
+    echo "✅ An .env file exists."
+fi
+
+echo "🔍 Checking if a '/etc/hosts' entry exists."
+if grep -E -q "^$server_ip[[:space:]]+$hostname" /etc/hosts; then
+    echo "✅ '/etc/hosts' entry $server_ip $hostname exists."
+else
+    echo "⚠️ '/etc/hosts' entry $server_ip $hostname does not exist."
+    echo "$server_ip $hostname" | sudo tee -a /etc/hosts
+    if grep -E -q "^$server_ip[[:space:]]+$hostname" /etc/hosts; then
+        echo "✅ '/etc/hosts' entry $server_ip $hostname was created."
+    else
+        echo "❌ Error: Failed to create '/etc/hosts' entry."
+        exit 1
+    fi
+fi
+
+echo "🔍 Checking if an SSL certificate is present."
+certPath="$project_dir/ssl/$cert_file"
+genCertScript="$project_dir/gencert.sh"
+if [[ ! -f "$certPath" ]]; then
+    echo "⚠️ SSL certificate is missing."
+    chmod +x "$genCertScript"
+    if [[ -x "$genCertScript" ]]; then
+        echo "🔄 Generating new SSL certificate..."
+        (cd "$project_dir" && ./gencert.sh)
+    else
+        echo "❌ Error: SSL certificate missing and gencert.sh is not executable or does not exist."
+        exit 1
+    fi
+else
+    echo "✅ SSL certificate found."
+fi
 
 echo "🛠️ Fixing possible SSL access right issues."
 sudo chown -R $(id -un):$(id -gn) "$project_dir/ssl/*"
@@ -244,14 +291,6 @@ if [[ -d "$plugin_dir" && ! -e "$target_plugin" ]]; then
     else
         echo "⚠️ Source plugin not found at $source_plugin."
     fi
-fi
-
-echo "🔍 Checking '/etc/hosts' entry."
-if grep -q "^$ip_to_check[[:space:]]\+$hostname" /etc/hosts; then
-    echo "✅ '/etc/hosts' entry $ip_to_check $hostname exists."
-else
-    echo "❌ Error: '/etc/hosts' entry $ip_to_check $hostname does not exist."
-    exit 1
 fi
 
 echo "🔍 Checking pf-rules."

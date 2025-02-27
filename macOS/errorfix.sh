@@ -66,6 +66,17 @@ function verify_directory() {
     fi
 }
 
+function is_container_running() {
+    local container_id
+    container_id=$(docker ps -q --filter "name=snap" --filter "name=webapp" | head -n 1)
+    if [[ -n "$container_id" ]]; then
+        local running
+        running=$(docker inspect --format '{{.State.Running}}' "$container_id" 2>/dev/null)
+        [[ "$running" == "true" ]] && return 0
+    fi
+    return 1
+}
+
 echo "🔍 Trying to detect Docker webapp container."
 container_id=$(docker ps -q -a --filter "name=snap" --filter "name=webapp" | head -n 1)
 if [[ -n "$container_id" ]]; then
@@ -342,25 +353,21 @@ else
     echo "⚠️ Firewall configuration file not found. Skipping firewall checks."
 fi
 
-if [[ "$running" != "true" ]]; then
+if ! is_container_running; then
     echo "🚀 Starting the server with 'docker compose up'."
     (cd "$project_dir" && docker compose up -d)
     max_retries=10
     retries=0
     while [[ $retries -lt $max_retries ]]; do
         echo "⏳ Waiting for the server to start..."
-        container_id=$(docker ps -q --filter "name=snap" --filter "name=webapp" | head -n 1)
-        if [[ -n "$container_id" ]]; then
-            running=$(docker inspect --format '{{.State.Running}}' "$container_id" 2>/dev/null)
-            if [[ "$running" == "true" ]]; then
-                echo "✅ Snap Camera Server is now running."
-                break
-            fi
+        if is_container_running; then
+            echo "✅ Snap Camera Server is now running."
+            break
         fi
         ((retries++))
         sleep 5
     done
-    if [[ "$running" != "true" ]]; then
+    if ! is_container_running; then
         echo "❌ Error: Snap Camera Server did not start within the expected time."
         exit 1
     fi

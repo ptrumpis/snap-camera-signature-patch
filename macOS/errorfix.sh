@@ -342,6 +342,30 @@ else
     echo "⚠️ Firewall configuration file not found. Skipping firewall checks."
 fi
 
+if [[ "$running" != "true" ]]; then
+    echo "🚀 Starting the server with 'docker compose up'."
+    (cd "$project_dir" && docker compose up -d)
+    max_retries=10
+    retries=0
+    while [[ $retries -lt $max_retries ]]; do
+        echo "⏳ Waiting for the server to start..."
+        container_id=$(docker ps -q --filter "name=snap" --filter "name=webapp" | head -n 1)
+        if [[ -n "$container_id" ]]; then
+            running=$(docker inspect --format '{{.State.Running}}' "$container_id" 2>/dev/null)
+            if [[ "$running" == "true" ]]; then
+                echo "✅ Snap Camera Server is now running."
+                break
+            fi
+        fi
+        ((retries++))
+        sleep 5
+    done
+    if [[ "$running" != "true" ]]; then
+        echo "❌ Error: Snap Camera Server did not start within the expected time."
+        exit 1
+    fi
+fi
+
 echo "🔍 Sending ping to host $hostname."
 if ping -c 1 -W 2000 "$hostname" > /dev/null 2>&1; then
     echo "✅ Ping to host $hostname succesful."

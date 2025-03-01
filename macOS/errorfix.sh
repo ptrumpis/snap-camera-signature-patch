@@ -7,7 +7,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 echo "......................................."
-echo "macOS errorfix v1.7.0 with ($SHELL)"
+echo "macOS errorfix v1.7.1 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -16,9 +16,20 @@ echo "OS Version: $OS_version"
 echo "Architecture: $architecture"
 echo "......................................."
 
+echo "🔍 Checking if Docker is installed."
+if ! command -v docker &> /dev/null; then
+    echo "❌ Error: Docker command not found. Please install Docker and try again."
+    exit 1
+else
+    echo "✅ Docker is installed."
+fi
+
+echo "🔍 Checking if jq is installed."
 if ! command -v jq &>/dev/null; then
     echo "🛠️ Installing jq..."
     brew install jq >/dev/null
+else
+    echo "✅ jq is installed."
 fi
 
 server_ip="127.0.0.1"
@@ -122,12 +133,12 @@ fi
 echo "✅ Snap Camera Server directory: $project_dir"
 
 echo "🔍 Checking if an .env file exists."
-envPath="$project_dir/.env"
-exampleEnvPath="$project_dir/example.env"
-if [[ ! -f "$envPath" ]]; then
+env_path="$project_dir/.env"
+example_env_path="$project_dir/example.env"
+if [[ ! -f "$env_path" ]]; then
     echo "⚠️ An .env file was not found."
-    if [[ -f "$exampleEnvPath" ]]; then
-        cp "$exampleEnvPath" "$envPath"
+    if [[ -f "$example_env_path" ]]; then
+        cp "$example_env_path" "$env_path"
         echo "✅ An .env file was created from example.env."
     else
         echo "❌ Error: Neither .env nor example.env found."
@@ -152,12 +163,12 @@ else
 fi
 
 echo "🔍 Checking if an SSL certificate is present."
-certPath="$project_dir/ssl/$cert_file"
-genCertScript="$project_dir/gencert.sh"
-if [[ ! -f "$certPath" ]]; then
+cert_path="$project_dir/ssl/$cert_file"
+gen_cert_script="$project_dir/gencert.sh"
+if [[ ! -f "$cert_path" ]]; then
     echo "⚠️ SSL certificate is missing."
-    chmod +x "$genCertScript"
-    if [[ -x "$genCertScript" ]]; then
+    chmod +x "$gen_cert_script"
+    if [[ -x "$gen_cert_script" ]]; then
         echo "🔄 Generating new SSL certificate..."
         (cd "$project_dir" && ./gencert.sh)
     else
@@ -172,7 +183,6 @@ echo "🛠️ Fixing possible SSL access right issues."
 sudo chown -R $(id -un):$(id -gn) "$project_dir/ssl/*"
 
 echo "🛠️ Fixing possible SSL trust issues..."
-cert_path="$project_dir/ssl/studio-app.snapchat.com.crt"
 cert_hash=$(openssl x509 -in "$cert_path" -noout -fingerprint -sha1 | sed 's/^.*=//')
 if [[ -z "$cert_hash" ]]; then
     echo "❌ Error: Failed to read certificate fingerprint! Please check the certificate file."
@@ -357,11 +367,11 @@ else
     echo "⚠️ Firewall configuration file not found. Skipping firewall checks."
 fi
 
+echo "🔍 Checking Docker file sharing directories."
 docker_restart_required="false"
 if ! command -v jq &>/dev/null; then
     echo "⚠️ jq is not installed. Skipping Docker file sharing check."
 else
-    echo "🔍 Checking Docker file sharing directories."
     docker_settings="$HOME/Library/Group Containers/group.com.docker/settings.json"
     if [[ -f "$docker_settings" ]]; then
         if jq -e --arg folder "$project_dir" '.filesharingDirectories | index($folder) != null' "$docker_settings" &>/dev/null; then

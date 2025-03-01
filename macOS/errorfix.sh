@@ -7,7 +7,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 echo "......................................."
-echo "macOS errorfix v1.6.0 with ($SHELL)"
+echo "macOS errorfix v1.7.0 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || OS_version="(Unknown)"
@@ -15,6 +15,11 @@ architecture=$(uname -m)
 echo "OS Version: $OS_version"
 echo "Architecture: $architecture"
 echo "......................................."
+
+if ! command -v jq &>/dev/null; then
+    echo "🛠️ Installing jq..."
+    brew install jq >/dev/null
+fi
 
 server_ip="127.0.0.1"
 hostname="studio-app.snapchat.com"
@@ -87,8 +92,7 @@ if [[ -n "$container_id" ]]; then
         echo "⚠️ Snap Camera Server is not runnning: $container_id"
     fi
 else
-    echo "⚠️ Unable to auto-detect Snap Camera Server on your system. Please make sure Snap Camera Server is set up and running."
-    echo "🌐 Download URL: https://github.com/ptrumpis/snap-camera-server/releases/latest"
+    echo "⚠️ Unable to auto-detect Snap Camera Server on your system."
 fi
 
 echo "🔍 Trying to determine server directory."
@@ -353,13 +357,73 @@ else
     echo "⚠️ Firewall configuration file not found. Skipping firewall checks."
 fi
 
+docker_restart_required="false"
+if ! command -v jq &>/dev/null; then
+    echo "⚠️ jq is not installed. Skipping Docker file sharing check."
+else
+    echo "🔍 Checking Docker file sharing directories."
+    docker_settings="$HOME/Library/Group Containers/group.com.docker/settings.json"
+    if [[ -f "$docker_settings" ]]; then
+        if jq -e --arg folder "$project_dir" '.filesharingDirectories | index($folder) != null' "$docker_settings" &>/dev/null; then
+            echo "✅ '$project_dir' is already in the Docker whitelist."
+        else
+            echo "🛠️ Adding '$project_dir' to Docker whitelist."
+            cp "$docker_settings" "$docker_settings.bak"
+            temp_settings=$(mktemp) && mv "$temp_settings" "${temp_settings}.json" && temp_settings="${temp_settings}.json"
+            jq --arg folder "$project_dir" '.filesharingDirectories += [$folder]' "$docker_settings" > "$temp_settings"
+            if jq empty "$temp_settings" &>/dev/null; then
+                mv "$temp_settings" "$docker_settings"
+                echo "✅ Server directory added successfully."
+                docker_restart_required="true"
+            else
+                echo "⚠️ JSON validation failed! Changes were not applied."
+            fi
+            rm -f "$temp_settings"
+        fi
+    else
+        echo "⚠️ Docker settings.json not found!"
+    fi
+fi
+
+if pgrep -x "Docker" > /dev/null && [ "$docker_restart_required" == "true" ]; then
+    echo "🔄 Restarting Docker..."
+    osascript -e 'quit app "Docker"' & disown
+    echo "⏳ Waiting for Docker to close..."
+    timeout=60
+    while docker system info &>/dev/null; do
+        sleep 1
+        ((timeout--))
+        if [ $timeout -le 0 ]; then
+            echo "❌ Timeout reached. Docker did not close successfully."
+            exit 1
+        fi
+    done
+    echo "✅ Docker closed successfully."
+fi
+
+if ! pgrep -x "Docker" > /dev/null; then
+    echo "🚀 Starting Docker in the background..."
+    open -a Docker & disown
+    echo "⏳ Waiting for Docker to start..."
+    timeout=60
+    while ! docker system info &>/dev/null; do
+        sleep 1
+        ((timeout--))
+        if [ $timeout -le 0 ]; then
+            echo "❌ Timeout reached. Docker did not start successfully."
+            exit 1
+        fi
+    done
+    echo "✅ Docker started successfully."
+fi
+
 if ! is_container_running; then
     echo "🚀 Starting the server with 'docker compose up'."
     (cd "$project_dir" && docker compose up -d)
     max_retries=10
     retries=0
+    echo "⏳ Waiting for the server to start... "
     while [[ $retries -lt $max_retries ]]; do
-        echo "⏳ Waiting for the server to start..."
         if is_container_running; then
             echo "✅ Snap Camera Server is now running."
             break
@@ -403,7 +467,7 @@ if command -v curl > /dev/null; then
         exit 1
     fi
 else
-    echo "❌ Error: The 'curl' command is not available. Please check in your browser that the URL $server_url is accessible."
+    echo "⚠️ Warning: The 'curl' command is not available. Please check in your browser that the URL $server_url is accessible."
 fi
 
 echo "🔍 Checking System Integrity Protection (SIP) status."

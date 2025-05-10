@@ -118,7 +118,7 @@ if [[ -n "$project_dir" ]]; then
     project_dir=$(to_posix_path "$project_dir")
 fi
 
-if [[ -z "$project_dir" || ! -d "$project_dir" || ! verify_directory "$project_dir" ]]; then
+if [ -z "$project_dir" ] || [ ! -d "$project_dir" ] || ! verify_directory "$project_dir"; then
     echo "⚠️ The server directory could not be determined automatically."
     while true; do
         user_input=$(osascript -e 'tell app "Finder" to set folderPath to POSIX path of (choose folder with prompt "Please select the Snap Camera Server directory:")' 2>/dev/null)

@@ -7,7 +7,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 echo "......................................."
-echo "macOS errorfix v1.7.2 with ($SHELL)"
+echo "macOS errorfix v1.7.3 with ($SHELL)"
 [ -n "$BASH_VERSION" ] && echo "bash version $BASH_VERSION"
 [ -n "$ZSH_VERSION" ] && echo "zsh version $ZSH_VERSION"
 OS_version=$(sw_vers | awk '/ProductVersion/ {print $2}') || true
@@ -80,7 +80,7 @@ function to_posix_path() {
 function verify_directory() {
     local dir
     dir=$(to_posix_path "$1")
-    if [[ -d "$dir" && -f "$dir/server.js" && -d "$dir/ssl" ]]; then
+    if [ -d "$dir" ] && [ -f "$dir/server.js" ] && [ -d "$dir/ssl" ]; then
         return 0
     else
         return 1
